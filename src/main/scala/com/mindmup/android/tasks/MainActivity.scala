@@ -1,16 +1,19 @@
 package com.mindmup.android.tasks
 
-import android.app.Activity
+import android.app._
 import android.content.Intent
 import android.content.IntentSender
 import android.content.IntentSender.SendIntentException
 import android.os.Bundle
 import android.util.Log
+import android.view._
 import android.widget._
 import macroid._
 import macroid.contrib._
 import macroid.FullDsl._
+import macroid.IdGeneration
 import macroid.viewable._
+import macroid.contrib.LpTweaks._
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GooglePlayServicesUtil
@@ -26,112 +29,199 @@ import com.google.android.gms.drive.MetadataChangeSet
 import com.google.android.gms.drive.OpenFileActivityBuilder
 import com.google.android.gms.drive.DriveApi.DriveIdResult
 import com.google.android.gms.drive.DriveApi.DriveContentsResult
+import com.google.android.gms.drive.DriveApi.MetadataBufferResult
+import com.google.android.gms.drive.query.Filters
+import com.google.android.gms.drive.query.Query
+import com.google.android.gms.drive.query.SearchableField
+import com.google.android.gms.drive.Metadata
+import com.google.android.gms.drive.widget.DataBufferAdapter
+import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent._
+import android.support.v4.app.FragmentActivity
+import android.support.v4.view.GravityCompat
+import android.support.v4.widget.DrawerLayout
+import android.support.v7.app._
+import android.view.ViewGroup.LayoutParams._
+import android.view.Gravity
+import android.app.ActionBar._
+import android.preference.PreferenceFragment
+import android.graphics.Color
 
 object OurTweaks {
   def greeting(greeting: String)(implicit appCtx: AppContext) =
     TextTweaks.large +
-    text(greeting) +
-    hide
+    text(greeting)
 
   def orient(implicit appCtx: AppContext) =
     landscape ? horizontal | vertical
-
-  // defines how to view a User in a list
-  implicit def userListable(implicit ctx: ActivityContext, appCtx: AppContext) =
-    Listable[User].tw {
-      // the layout is a TextView
-      w[TextView]
-    } { user ⇒
-      // to display a user, we tweak the layout
-      text(user.name) + TextTweaks.size(user.age + 10)
-    }
 }
 
-// our data type
-case class User(name: String, age: Int)
+class LoginFragment extends Fragment with Contexts[Fragment] {
+  override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View = getUi {
+    l[LinearLayout](
+      w[TextView] <~ text("Fragment demo")
+    )
+  }
 
-class MainActivity extends Activity with Contexts[Activity] with ConnectionCallbacks {
+}
+
+class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
+  with ConnectionCallbacks with IdGeneration {
   private val TAG = "MindmupTasks"
 
   private val REQUEST_CODE_OPENER = 1
-  private val REQUEST_CODE_CAPTURE_IMAGE = 1
   private val REQUEST_CODE_CREATOR = 2
-  private val REQUEST_CODE_RESOLUTION = 3
   var greeting = slot[TextView]
+  // -- in the activity:
+
+  var navSlot = slot[ListView]
+  var drawerSlot = slot[DrawerLayout]
+
+
+/*  override def onPostCreate(savedInstanceState: Bundle) {
+    super.onPostCreate(savedInstanceState)
+    drawerToggle.syncState()
+    drawerToggle.setDrawerIndicatorEnabled(true)
+  }
+*/
+  def println(s: String): Unit = Log.i(TAG, s)
   lazy val googleApiClient: GoogleApiClient = {
-    new GoogleApiClient.Builder(this).addApi(Drive.API)
+    val connectionFailedListener: GoogleApiClient.OnConnectionFailedListener =
+      (result: ConnectionResult) => {
+      Log.i(TAG, "GoogleApiClient connection failed: " + result.toString)
+      if (!result.hasResolution()) {
+        GooglePlayServicesUtil.getErrorDialog(result.getErrorCode, this, 0)
+          .show()
+        return
+      }
+    }
+    new GoogleApiClient.Builder(this)
+    .enableAutoManage(this, 0 /* clientId */, connectionFailedListener)
+    .addApi(Drive.API)
     .addScope(Drive.SCOPE_FILE)
     .addConnectionCallbacks(this)
-    .addOnConnectionFailedListener((result: ConnectionResult) => {
-        Log.i(TAG, "GoogleApiClient connection failed: " + result.toString)
-        if (!result.hasResolution()) {
-          GooglePlayServicesUtil.getErrorDialog(result.getErrorCode, this, 0)
-            .show()
-          return
-        }
-        try {
-          result.startResolutionForResult(this, REQUEST_CODE_RESOLUTION)
-        } catch {
-          case e: SendIntentException => Log.e(TAG, "Exception while starting resolution activity", e)
-        }
-      })
     .build()
   }
 
+  class PrefsFragment extends PreferenceFragment {
+    override def onCreate(savedInstanceState: Bundle) = {
+      super.onCreate(savedInstanceState)
+      addPreferencesFromResource(R.xml.preferences)
+    }
+  }
+
   override def onCreate(savedInstanceState: Bundle) = {
+    import Implicits._
     super.onCreate(savedInstanceState)
+    import android.support.v7.widget.Toolbar
+    var toolbar = slot[Toolbar]
 
-    val myListView = w[ListView]
+    val items = List("bla", "foo", "bar")
+    lazy val drawer = l[DrawerLayout](
+      f[PrefsFragment].framed(Id.something, Tag.elss) <~ matchParent,
+      w[ListView] <~ matchParent <~ ListTweaks.noDivider <~ items.listAdapterTweak
+        <~ Tweak[ListView] { lv =>
+          val p = new DrawerLayout.LayoutParams(240 dp, android.view.ViewGroup.LayoutParams.MATCH_PARENT, GravityCompat.START)
+          lv.setLayoutParams(p)
+          lv.setAlpha(1)
+        }
+    ) <~ matchParent <~ Tweak[DrawerLayout] { d =>
+      //d.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START)
 
-    import OurTweaks.userListable
-    // now we simply tweak the ListView
-    val tweakedList = myListView <~ List(User("Alice", 12), User("Bob", 23)).listAdapterTweak
+      val actionBarDrawerToggle = new ActionBarDrawerToggle(MainActivity.this, d, toolbar.get, R.string.app_name, R.string.app_name)
+      d.setDrawerListener(actionBarDrawerToggle)
+    }
 
-    setContentView {
+    val view = l[LinearLayout](
+      w[Toolbar] <~ matchWidth <~ wire(toolbar) <~ Tweak[Toolbar] { t =>
+        t.setPopupTheme(R.style.AppTheme)
+        setSupportActionBar(t)
+        getSupportActionBar.setDisplayHomeAsUpEnabled(true)
+        getSupportActionBar.setHomeButtonEnabled(true)
+      },
+      drawer
+    ) <~ vertical <~ matchParent
+
+    setContentView(getUi(view))
+  }
+
+  def onCreate2(savedInstanceState: Bundle) = {
+    super.onCreate(savedInstanceState)
+    var button = slot[Button]
+    // -- in onCreate:
+
+    // ListView tweaks
+    def checkItem(pos: Int) = Tweak[ListView](_.setItemChecked(pos, true))
+    val singleNoDivider = Tweak[ListView] { lv ⇒
+      lv.setDividerHeight(0)
+      lv.setChoiceMode(AbsListView.CHOICE_MODE_SINGLE)
+    }
+
+    // Drawer tweaks
+    val closeDrawers = Tweak[DrawerLayout](_.closeDrawers())
+    //val drawerShadow = Tweak[DrawerLayout](_.setDrawerShadow(R.drawable.drawer_shadow, Gravity.START))
+
+    // navigation
+    val nav = w[ListView] <~
+      layoutParams[DrawerLayout](240 dp, MATCH_PARENT, Gravity.START) <~
+      BgTweaks.color(Color.parseColor("#FF363636")) <~
+      singleNoDivider <~
+      new MindmupFileSelection(findMindmups).fileListTweak <~
+      wire(navSlot)
+
+    navSlot <~ new MindmupFileSelection(findMindmups).fileListTweak
+    // f[...].framed returns a FrameLayout
+    // there is probably no point in wrapping
+    // it into an additional LinearLayout
+    val view = f[PrefsFragment].framed(Id.provinceOverview, Tag.provinceOverview) <~
+      layoutParams[DrawerLayout](MATCH_PARENT, WRAP_CONTENT)
+
+    // the drawer
+    val drawer = l[DrawerLayout](
+      w[TextView] <~ text("Main content"),
+      view,
+      nav
+    ) <~
+      //drawerShadow <~
+      wire(drawerSlot)
+
+    setContentView(getUi(drawer))
+/*    setContentView {
       getUi {
         l[LinearLayout](
-          tweakedList,
-          w[Button] <~
-            text("Click me") <~
-            On.click {
-              greeting <~ text("Here should have been some JSON") <~ show
-            },
-          w[TextView] <~
-            wire(greeting) <~
-            OurTweaks.greeting("Hello!")
-        ) <~ OurTweaks.orient
+          w[TextView] <~ text("Before"),
+          f[MindmupFileSelection](findMindmups).framed(Id.mindmupFiles, Tag.mindmupFilesTag),
+          w[TextView] <~ text("After")
+        ) <~ vertical
       }
     }
+    */
   }
+
+
+
   override def onStart: Unit = {
+    googleApiClient
     super.onStart();
-    setupGoogleApi()
   }
 
-  def setupGoogleApi(): Unit = {
-    googleApiClient.connect()
-  }
-  protected override def onResume() {
-    super.onResume()
-    setupGoogleApi()
-  }
-
-  protected override def onPause() {
-    if (googleApiClient != null) {
-      googleApiClient.disconnect()
+  def findMindmups: Future[Seq[Metadata]] = {
+    val query = new Query.Builder()
+      .addFilter(Filters.eq(SearchableField.MIME_TYPE, "application/json"))
+      .build();
+    Future {
+      println(s"Starting to search files, API Client is connected? ${googleApiClient.isConnected}")
+      googleApiClient.blockingConnect
+      println(s"Blocking connected, API Client is connected? ${googleApiClient.isConnected}")
+      val res = Drive.DriveApi.query(googleApiClient, query).await().getMetadataBuffer.iterator.asScala.toList
+      println(s"Finished searching files:\n${res}")
+      res
     }
-    super.onPause()
-  }
-
-
-
-
-
-  override def onConnectionSuspended(cause: Int) {
-    Log.i(TAG, "GoogleApiClient connection suspended")
   }
 
   override def onConnected(connectionHint: Bundle) {
+    /*
     val intentSender = Drive.DriveApi.newOpenFileActivityBuilder().setMimeType(Array("application/json"))
       .build(googleApiClient)
     try {
@@ -139,37 +229,35 @@ class MainActivity extends Activity with Contexts[Activity] with ConnectionCallb
     } catch {
       case e: SendIntentException => Log.w(TAG, "Unable to send intent", e)
     }
+    */
+
   }
 
-  protected override def onActivityResult(requestCode: Int, resultCode: Int, data: Intent) = requestCode match {
-    case REQUEST_CODE_OPENER =>
-      if (resultCode == Activity.RESULT_OK) {
-        val driveId = data.getParcelableExtra(OpenFileActivityBuilder.EXTRA_RESPONSE_DRIVE_ID).asInstanceOf[DriveId]
-        showMessage("Selected file's ID: " + loadFile(driveId))
-      }
-
-
-    case _ => super.onActivityResult(requestCode, resultCode, data)
+  override def onConnectionSuspended(cause: Int) {
+    Log.i(TAG, "GoogleApiClient connection suspended")
   }
 
   def loadFile(driveId: DriveId): String = {
-    Log.i(TAG, s"Google Api connected before? ${googleApiClient.isConnected}")
-    googleApiClient.connect()
-    Log.i(TAG, s"Google Api connected after? ${googleApiClient.isConnected}")
+    googleApiClient.blockingConnect()
     val file = Drive.DriveApi.getFile(googleApiClient, driveId);
     val driveContentsResult =
-            file.open(googleApiClient, DriveFile.MODE_READ_ONLY, null).await();
+      file.open(googleApiClient, DriveFile.MODE_READ_ONLY, null).await();
+    Log.i(TAG, s"Drive content results ${driveContentsResult} ${driveContentsResult.getStatus()}")
     if (!driveContentsResult.getStatus().isSuccess()) {
         return null;
     }
     val driveContents = driveContentsResult.getDriveContents()
-    scala.io.Source.fromInputStream(driveContents.getInputStream()).mkString
+    val json = scala.io.Source.fromInputStream(driveContents.getInputStream()).mkString
+    Log.i(TAG, s"Read the following:\n$json")
+    Ui(showMessage(json))
+
+    json
   }
 
   /**
    * Shows a toast message.
    */
   def showMessage(message: String): Unit = {
-      Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
   }
 }

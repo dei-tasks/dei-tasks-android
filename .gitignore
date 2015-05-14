@@ -4,3 +4,5 @@ bin/
 local.properties
 .idea/
 **/.DS_Store
+.ensime
+.ensime_cache/

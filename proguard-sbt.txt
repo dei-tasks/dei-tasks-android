@@ -60,3 +60,7 @@
 
 # view AndroidManifest.xml #generated:7
 -keep class com.mindmup.android.tasks.MainActivity { <init>(...); }
+
+-keep class scala.Dynamic
+-keep class scala.math.Numeric
+-keep class scala.concurrent.ExecutionContext
