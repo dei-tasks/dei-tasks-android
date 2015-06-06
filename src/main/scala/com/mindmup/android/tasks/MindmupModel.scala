@@ -83,3 +83,14 @@ class MindmupModel(googleApiClient: GoogleApiClient) {
     tasks
   }
 }
+
+object MindmupModel {
+  val queryInterpreter: CharSequence => List[Map[String, Any]] => Boolean = { query =>
+    val ql = query.toString.toLowerCase.split(" ")
+    val filter = { ml: List[Map[String, Any]] =>
+      val titlePath = ml.map(_("title")).mkString(" ").toLowerCase
+      ql.forall(titlePath.contains)
+    }
+    filter
+  }
+}

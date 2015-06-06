@@ -141,17 +141,10 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     refreshAvailableMindmups()
     currentMindmupIds() = sharedPreferences.getStringSet("selected_mindmups", java.util.Collections.emptySet[String]).asScala.toSet
     import FilterableListableListAdapter._
-    val queryInterpreter: CharSequence => List[Map[String, Any]] => Boolean = { query =>
-      val ql = query.toString.toLowerCase.split(" ")
-      val filter = { ml: List[Map[String, Any]] =>
-        val titlePath = ml.map(_("title")).mkString(" ").toLowerCase
-        ql.forall(titlePath.contains)
-      }
-      filter
-    }
+
 
     lazy val taskListView = w[ListView] <~
-      currentTasks.map(t => taskListable.filterableListAdapterTweak(t, queryInterpreter))
+      currentTasks.map(t => taskListable.filterableListAdapterTweak(t, MindmupModel.queryInterpreter))
       taskFilterString.map { fs =>
         Tweak[ListView] { lv =>
           val adapter = lv.getAdapter.asInstanceOf[ListableListAdapter[_, _]]
