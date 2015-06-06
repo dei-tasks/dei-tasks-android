@@ -28,11 +28,14 @@ libraryDependencies ++= Seq(
   aar("org.macroid" %% "macroid" % "2.0.0-M4"),
   aar("org.macroid" %% "macroid-viewable" % "2.0.0-M4"),
   aar("com.fortysevendeg" %% "macroid-extras" % "0.1.1"),
+  aar("com.github.bmelnychuk" % "atv" % "1.2.4"),
   "com.android.support" % "support-v4" % "22.1.1",
   "com.android.support" % "appcompat-v7" % "22.1.1",
-  "net.sf.proguard" % "proguard-base" % "5.1",
+  "net.sf.proguard" % "proguard-base" % "5.2.1",
   "com.google.android.gms" % "play-services-drive" % "7.3.0",
-  "net.virtual-void" %%  "json-lenses" % "0.6.0"
+  "org.json4s" %% "json4s-native" % "3.2.11",
+  "com.lihaoyi" %% "scalarx" % "0.2.8",
+  "com.softwaremill.scalamacrodebug" %% "macros" % "0.4"
 )
 
 
@@ -43,5 +46,15 @@ proguardOptions in Android ++= Seq(
   "-keep class scala.concurrent.ExecutionContext",
   "-keep class macroid.*",
   "-keep class macroid.**",
-  "-keep class scala.collection.JavaConverters"
+  "-keep class scala.collection.JavaConverters",
+  "-keep class com.mindmup.android.tasks.*",
+  "-keep class android.support.v4.** { *; }",
+  "-keep interface android.support.v4.** { *; }",
+  "-keep class android.support.v7.** { *; }",
+  "-keep interface android.support.v7.** { *; }",
+  "-keep class android.support.v7.widget.SearchView",
+  """-keep public class * extends android.support.v7.widget.SearchView {
+   public <init>(android.content.Context);
+   public <init>(android.content.Context, android.util.AttributeSet);
+  }"""
 )

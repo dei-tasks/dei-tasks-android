@@ -4,8 +4,8 @@
     <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
-        <item name="colorPrimary">#ff0000</item>
-        <item name="colorPrimaryDark">#ff0000</item>
+        <item name="colorPrimary">#31aae2</item>
+        <item name="colorPrimaryDark">#164b64</item>
     </style>
     <style name="ToolbarCustomIconColor" parent="AppTheme">
         <!-- android:textColorSecondary is used for coloring the navigation drawer icon and up arrow. -->

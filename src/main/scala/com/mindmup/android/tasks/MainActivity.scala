@@ -1,10 +1,10 @@
 package com.mindmup.android.tasks
 
 import android.app._
-import android.content.Intent
-import android.content.IntentSender
+import android.content.{ Intent, IntentSender, Context, SharedPreferences }
 import android.content.IntentSender.SendIntentException
 import android.os.Bundle
+import android.provider.SearchRecentSuggestions
 import android.util.Log
 import android.view._
 import android.widget._
@@ -34,6 +34,7 @@ import com.google.android.gms.drive.query.Filters
 import com.google.android.gms.drive.query.Query
 import com.google.android.gms.drive.query.SearchableField
 import com.google.android.gms.drive.Metadata
+import com.google.android.gms.drive.events.ChangeEvent
 import com.google.android.gms.drive.widget.DataBufferAdapter
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -41,12 +42,29 @@ import scala.concurrent._
 import android.support.v4.app.FragmentActivity
 import android.support.v4.view.GravityCompat
 import android.support.v4.widget.DrawerLayout
+
+import android.support.v4.view.MenuItemCompat
+import android.support.v4.view.MenuItemCompat.OnActionExpandListener
 import android.support.v7.app._
 import android.view.ViewGroup.LayoutParams._
 import android.view.Gravity
 import android.app.ActionBar._
 import android.preference.PreferenceFragment
 import android.graphics.Color
+import com.softwaremill.debug.DebugConsole._
+import macroid.util.Effector
+import rx._
+import rx.ops._
+
+// support for Scala.Rx
+// will be a part of macroid-frp
+trait RxSupport {
+  var refs = List.empty[AnyRef]
+  implicit def rxEffector = new Effector[Rx] {
+    override def foreach[A](fa: Rx[A])(f: A ⇒ Any): Unit =
+      refs ::= fa.foreach(f andThen (_ ⇒ ()))
+  }
+}
 
 object OurTweaks {
   def greeting(greeting: String)(implicit appCtx: AppContext) =
@@ -57,27 +75,29 @@ object OurTweaks {
     landscape ? horizontal | vertical
 }
 
-class LoginFragment extends Fragment with Contexts[Fragment] {
-  override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View = getUi {
-    l[LinearLayout](
-      w[TextView] <~ text("Fragment demo")
-    )
-  }
-
-}
-
 class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
-  with ConnectionCallbacks with IdGeneration {
+  with ConnectionCallbacks with IdGeneration with RxSupport with SharedPreferences.OnSharedPreferenceChangeListener {
   private val TAG = "MindmupTasks"
 
   private val REQUEST_CODE_OPENER = 1
   private val REQUEST_CODE_CREATOR = 2
   var greeting = slot[TextView]
-  // -- in the activity:
 
   var navSlot = slot[ListView]
   var drawerSlot = slot[DrawerLayout]
+  val taskFilterString = Var[String]("")
+  val currentMindmupIds = Var[Set[String]](Set.empty)
+  val lastKnownChange = Var[Long](System.currentTimeMillis)
+  private val googleApiClient = promise[GoogleApiClient]
+  private val mindmupModel = googleApiClient.future.map(new MindmupModel(_))
 
+  val currentTasks = Rx {
+    val mmIds = currentMindmupIds()
+    val lastChange = lastKnownChange()
+    println(s"Retrieving tasks for $mmIds, last known change $lastChange")
+    mindmupModel.map(_.retrieveTasks(mmIds))
+  }.async(List.empty)
+  val selectableMindmups = Var[Seq[Metadata]](Seq.empty)
 
 /*  override def onPostCreate(savedInstanceState: Bundle) {
     super.onPostCreate(savedInstanceState)
@@ -86,10 +106,11 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
   }
 */
   def println(s: String): Unit = Log.i(TAG, s)
-  lazy val googleApiClient: GoogleApiClient = {
+
+  private def createGoogleApiClientOnlyWhenInOnStart = {
     val connectionFailedListener: GoogleApiClient.OnConnectionFailedListener =
       (result: ConnectionResult) => {
-      Log.i(TAG, "GoogleApiClient connection failed: " + result.toString)
+      println(s"GoogleApiClient connection failed: $result")
       if (!result.hasResolution()) {
         GooglePlayServicesUtil.getErrorDialog(result.getErrorCode, this, 0)
           .show()
@@ -104,30 +125,63 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     .build()
   }
 
-  class PrefsFragment extends PreferenceFragment {
-    override def onCreate(savedInstanceState: Bundle) = {
-      super.onCreate(savedInstanceState)
-      addPreferencesFromResource(R.xml.preferences)
-    }
-  }
+  var todos = slot[ListView]
 
+  def sharedPreferences = android.preference.PreferenceManager.getDefaultSharedPreferences(this)
+
+  def refreshAvailableMindmups(): Unit = {
+    mindmupModel.map(_.findMindmups).foreach { mms => selectableMindmups() = mms }
+  }
   override def onCreate(savedInstanceState: Bundle) = {
     import Implicits._
     super.onCreate(savedInstanceState)
     import android.support.v7.widget.Toolbar
     var toolbar = slot[Toolbar]
+    handleIntent(getIntent())
+    refreshAvailableMindmups()
+    currentMindmupIds() = sharedPreferences.getStringSet("selected_mindmups", java.util.Collections.emptySet[String]).asScala.toSet
+    import FilterableListableListAdapter._
+    val queryInterpreter: CharSequence => List[Map[String, Any]] => Boolean = { query =>
+      val ql = query.toString.toLowerCase.split(" ")
+      val filter = { ml: List[Map[String, Any]] =>
+        val titlePath = ml.map(_("title")).mkString(" ").toLowerCase
+        ql.forall(titlePath.contains)
+      }
+      filter
+    }
 
-    val items = List("bla", "foo", "bar")
+    lazy val taskListView = w[ListView] <~
+      currentTasks.map(t => taskListable.filterableListAdapterTweak(t, queryInterpreter))
+      taskFilterString.map { fs =>
+        Tweak[ListView] { lv =>
+          val adapter = lv.getAdapter.asInstanceOf[ListableListAdapter[_, _]]
+          if(adapter != null) {
+            adapter.getFilter.filter(fs)
+          }
+        }
+      }
+
     lazy val drawer = l[DrawerLayout](
-      f[PrefsFragment].framed(Id.something, Tag.elss) <~ matchParent,
-      w[ListView] <~ matchParent <~ ListTweaks.noDivider <~ items.listAdapterTweak
-        <~ Tweak[ListView] { lv =>
+      l[LinearLayout](
+        taskListView
+      ) <~ matchParent,
+      l[LinearLayout](
+        f[MindmupFileSelection](selectableMindmups).framed(Id.mindmupFiles, Tag.mindmupFilesTag),
+        w[Button] <~ text("Add additional files") <~ On.click {
+          openMindmupSelectionDialog
+          refreshAvailableMindmups()
+          Ui(true)
+        }
+      ) <~ vertical
+        <~ matchParent
+        <~ BgTweaks.color(Color.parseColor("#FF164b64"))
+        <~ Tweak[LinearLayout] { lv =>
           val p = new DrawerLayout.LayoutParams(240 dp, android.view.ViewGroup.LayoutParams.MATCH_PARENT, GravityCompat.START)
           lv.setLayoutParams(p)
-          lv.setAlpha(1)
+          lv.setAlpha(255)
         }
     ) <~ matchParent <~ Tweak[DrawerLayout] { d =>
-      //d.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START)
+      d.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START)
 
       val actionBarDrawerToggle = new ActionBarDrawerToggle(MainActivity.this, d, toolbar.get, R.string.app_name, R.string.app_name)
       d.setDrawerListener(actionBarDrawerToggle)
@@ -146,118 +200,81 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     setContentView(getUi(view))
   }
 
-  def onCreate2(savedInstanceState: Bundle) = {
-    super.onCreate(savedInstanceState)
-    var button = slot[Button]
-    // -- in onCreate:
-
-    // ListView tweaks
-    def checkItem(pos: Int) = Tweak[ListView](_.setItemChecked(pos, true))
-    val singleNoDivider = Tweak[ListView] { lv ⇒
-      lv.setDividerHeight(0)
-      lv.setChoiceMode(AbsListView.CHOICE_MODE_SINGLE)
-    }
-
-    // Drawer tweaks
-    val closeDrawers = Tweak[DrawerLayout](_.closeDrawers())
-    //val drawerShadow = Tweak[DrawerLayout](_.setDrawerShadow(R.drawable.drawer_shadow, Gravity.START))
-
-    // navigation
-    val nav = w[ListView] <~
-      layoutParams[DrawerLayout](240 dp, MATCH_PARENT, Gravity.START) <~
-      BgTweaks.color(Color.parseColor("#FF363636")) <~
-      singleNoDivider <~
-      new MindmupFileSelection(findMindmups).fileListTweak <~
-      wire(navSlot)
-
-    navSlot <~ new MindmupFileSelection(findMindmups).fileListTweak
-    // f[...].framed returns a FrameLayout
-    // there is probably no point in wrapping
-    // it into an additional LinearLayout
-    val view = f[PrefsFragment].framed(Id.provinceOverview, Tag.provinceOverview) <~
-      layoutParams[DrawerLayout](MATCH_PARENT, WRAP_CONTENT)
-
-    // the drawer
-    val drawer = l[DrawerLayout](
-      w[TextView] <~ text("Main content"),
-      view,
-      nav
-    ) <~
-      //drawerShadow <~
-      wire(drawerSlot)
-
-    setContentView(getUi(drawer))
-/*    setContentView {
-      getUi {
-        l[LinearLayout](
-          w[TextView] <~ text("Before"),
-          f[MindmupFileSelection](findMindmups).framed(Id.mindmupFiles, Tag.mindmupFilesTag),
-          w[TextView] <~ text("After")
-        ) <~ vertical
-      }
-    }
-    */
+  protected override def onResume() {
+    super.onResume()
+    sharedPreferences.registerOnSharedPreferenceChangeListener(this)
   }
 
+  protected override def onPause() {
+    super.onPause()
+    sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
+  }
+  override def onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String) {
+    if (key.equals("selected_mindmups")) {
+      println(s"Changed selected mindmups: ${sharedPreferences.getAll}")
+      currentMindmupIds() = sharedPreferences.getStringSet("selected_mindmups", java.util.Collections.emptySet[String]).asScala.toSet
+    }
+  }
+  override def onNewIntent(intent: Intent): Unit = {
+    handleIntent(intent)
+  }
 
+  def handleIntent(intent: Intent): Unit = {
+    if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
+      val query = intent.getStringExtra(SearchManager.QUERY)
+      println(s"Got the following query: $query")
+      val suggestions = new SearchRecentSuggestions(this,
+                RecentSearchesSuggestionProvider.AUTHORITY, RecentSearchesSuggestionProvider.MODE)
+      suggestions.saveRecentQuery(query, null)
+      taskFilterString() = query
+    }
+  }
+
+  override def onCreateOptionsMenu(menu: Menu): Boolean = {
+    val inflater = getMenuInflater();
+    inflater.inflate(R.menu.options_menu, menu)
+    // Associate searchable configuration with the SearchView
+    val searchManager = getSystemService(Context.SEARCH_SERVICE).asInstanceOf[SearchManager]
+    val menuItem = menu.findItem(R.id.search)
+    val searchView = menuItem.getActionView().asInstanceOf[android.support.v7.widget.SearchView]
+    searchView.setOnQueryTextListener(new android.support.v7.widget.SearchView.OnQueryTextListener() {
+      def onQueryTextChange(text: String): Boolean = { taskFilterString()=text; true}
+      def onQueryTextSubmit(text: String): Boolean = { taskFilterString()=text; true}
+    })
+
+    val searchableInfo = searchManager.getSearchableInfo(getComponentName())
+    searchView.setSearchableInfo(searchableInfo)
+    true
+  }
 
   override def onStart: Unit = {
-    googleApiClient
+    googleApiClient success createGoogleApiClientOnlyWhenInOnStart
     super.onStart();
   }
 
-  def findMindmups: Future[Seq[Metadata]] = {
-    val query = new Query.Builder()
-      .addFilter(Filters.eq(SearchableField.MIME_TYPE, "application/json"))
-      .build();
-    Future {
-      println(s"Starting to search files, API Client is connected? ${googleApiClient.isConnected}")
-      googleApiClient.blockingConnect
-      println(s"Blocking connected, API Client is connected? ${googleApiClient.isConnected}")
-      val res = Drive.DriveApi.query(googleApiClient, query).await().getMetadataBuffer.iterator.asScala.toList
-      println(s"Finished searching files:\n${res}")
-      res
+
+  def openMindmupSelectionDialog: Unit = {
+    val openIntentFuture = googleApiClient.future.map { gapi =>
+      gapi.blockingConnect()
+      val intentSender = Drive.DriveApi.newOpenFileActivityBuilder()
+        //.setSelectionFilter(mindmupFilter)
+        .setMimeType(Array("application/json"))
+        .build(gapi)
+      try {
+        startIntentSenderForResult(intentSender, REQUEST_CODE_OPENER, null, 0, 0, 0)
+      } catch {
+        case e: SendIntentException => Log.w(TAG, "Unable to send intent", e)
+      }
+    }
+    openIntentFuture.onFailure {
+      case f => println(s"Something went wrong while openening dialog for selecting files: $f")
     }
   }
 
   override def onConnected(connectionHint: Bundle) {
-    /*
-    val intentSender = Drive.DriveApi.newOpenFileActivityBuilder().setMimeType(Array("application/json"))
-      .build(googleApiClient)
-    try {
-      startIntentSenderForResult(intentSender, REQUEST_CODE_OPENER, null, 0, 0, 0)
-    } catch {
-      case e: SendIntentException => Log.w(TAG, "Unable to send intent", e)
-    }
-    */
-
   }
 
   override def onConnectionSuspended(cause: Int) {
-    Log.i(TAG, "GoogleApiClient connection suspended")
-  }
-
-  def loadFile(driveId: DriveId): String = {
-    googleApiClient.blockingConnect()
-    val file = Drive.DriveApi.getFile(googleApiClient, driveId);
-    val driveContentsResult =
-      file.open(googleApiClient, DriveFile.MODE_READ_ONLY, null).await();
-    Log.i(TAG, s"Drive content results ${driveContentsResult} ${driveContentsResult.getStatus()}")
-    if (!driveContentsResult.getStatus().isSuccess()) {
-        return null;
-    }
-    val driveContents = driveContentsResult.getDriveContents()
-    val json = scala.io.Source.fromInputStream(driveContents.getInputStream()).mkString
-    Log.i(TAG, s"Read the following:\n$json")
-    Ui(showMessage(json))
-
-    json
-  }
-
-  /**
-   * Shows a toast message.
-   */
-  def showMessage(message: String): Unit = {
-    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    println("GoogleApiClient connection suspended")
   }
 }
