@@ -144,7 +144,7 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
 
 
     lazy val taskListView = w[ListView] <~
-      currentTasks.map(t => taskListable.filterableListAdapterTweak(t, MindmupModel.queryInterpreter))
+      currentTasks.map(t => taskListable.filterableListAdapterTweak(t, MindmupModel.queryInterpreter)) <~
       taskFilterString.map { fs =>
         Tweak[ListView] { lv =>
           val adapter = lv.getAdapter.asInstanceOf[ListableListAdapter[_, _]]
