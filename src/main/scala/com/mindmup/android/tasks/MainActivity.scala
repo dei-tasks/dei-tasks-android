@@ -56,15 +56,7 @@ import macroid.util.Effector
 import rx._
 import rx.ops._
 
-// support for Scala.Rx
-// will be a part of macroid-frp
-trait RxSupport {
-  var refs = List.empty[AnyRef]
-  implicit def rxEffector = new Effector[Rx] {
-    override def foreach[A](fa: Rx[A])(f: A ⇒ Any): Unit =
-      refs ::= fa.foreach(f andThen (_ ⇒ ()))
-  }
-}
+
 
 object OurTweaks {
   def greeting(greeting: String)(implicit appCtx: AppContext) =
@@ -140,23 +132,12 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     handleIntent(getIntent())
     refreshAvailableMindmups()
     currentMindmupIds() = sharedPreferences.getStringSet("selected_mindmups", java.util.Collections.emptySet[String]).asScala.toSet
-    import FilterableListableListAdapter._
 
 
-    lazy val taskListView = w[ListView] <~
-      currentTasks.map(t => taskListable.filterableListAdapterTweak(t, MindmupModel.queryInterpreter)) <~
-      taskFilterString.map { fs =>
-        Tweak[ListView] { lv =>
-          val adapter = lv.getAdapter.asInstanceOf[ListableListAdapter[_, _]]
-          if(adapter != null) {
-            adapter.getFilter.filter(fs)
-          }
-        }
-      }
 
     lazy val drawer = l[DrawerLayout](
       l[LinearLayout](
-        taskListView
+        f[TaskListFragment](currentTasks, taskFilterString).framed(Id.taskList, Tag.taskListTag)
       ) <~ matchParent,
       l[LinearLayout](
         f[MindmupFileSelection](selectableMindmups).framed(Id.mindmupFiles, Tag.mindmupFilesTag),
