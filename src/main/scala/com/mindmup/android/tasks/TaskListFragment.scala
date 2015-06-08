@@ -14,11 +14,14 @@ import macroid.IdGeneration
 import macroid.viewable._
 import macroid.contrib.LpTweaks._
 
+import android.support.v4.app.Fragment
+
 import rx._
 import rx.ops._
 
 
-class TaskListFragment(currentTasks: Rx[Seq[List[Map[String, Any]]]], taskFilterString: Rx[String]) extends Fragment with Contexts[Fragment] with RxSupport {
+class TaskListFragment(currentTasks: Rx[Seq[List[Map[String, Any]]]], taskFilterString: Rx[String])
+extends Fragment with Contexts[Fragment] with RxSupport with IdGeneration {
   import FilterableListableListAdapter._
   import Implicits._
 
@@ -31,6 +34,14 @@ class TaskListFragment(currentTasks: Rx[Seq[List[Map[String, Any]]]], taskFilter
           adapter.getFilter.filter(fs)
         }
       }
+    } <~
+    FuncOn.itemClick[ListView] { (_: AdapterView[_], _: View, index: Int, _: Long) =>
+      println(s"You clicked on item # $index")
+      println(s"That might be ${currentTasks()(index).last}")
+      import com.fortysevendeg.macroid.extras.FragmentExtras._
+      addFragment(f[TaskDetailFragment](currentTasks()(index)), Some(Id.taskList), Some(Tag.taskListTag))
+      println("After replacing fragment")
+      Ui(true)
     }
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View = {
