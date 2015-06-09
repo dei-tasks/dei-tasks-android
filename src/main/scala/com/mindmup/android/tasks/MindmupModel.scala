@@ -78,7 +78,7 @@ class MindmupModel(googleApiClient: GoogleApiClient) {
     import TreeLike._
     implicit val formats = DefaultFormats
     val tasks = parsed.flatMap { json =>
-      allDescendantsWithPaths(json.extract[Map[String, Any]])
+      allDescendantsWithPaths(json)
     }
     println(s"Successfully taskified ${tasks.size} nodes")
     tasks
@@ -86,10 +86,11 @@ class MindmupModel(googleApiClient: GoogleApiClient) {
 }
 
 object MindmupModel {
-  val queryInterpreter: CharSequence => List[Map[String, Any]] => Boolean = { query =>
+  def queryInterpreter[T: TreeLike]: CharSequence => List[T] => Boolean = { query =>
     val ql = query.toString.toLowerCase.split(" ")
-    val filter = { ml: List[Map[String, Any]] =>
-      val titlePath = ml.map(_("title")).mkString(" ").toLowerCase
+    val tl = implicitly[TreeLike[T]]
+    val filter = { ml: List[T] =>
+      val titlePath = ml.map(tl.name(_)).mkString(" ").toLowerCase
       ql.forall(titlePath.contains)
     }
     filter

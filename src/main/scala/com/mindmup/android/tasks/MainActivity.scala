@@ -36,6 +36,7 @@ import com.google.android.gms.drive.query.SearchableField
 import com.google.android.gms.drive.Metadata
 import com.google.android.gms.drive.events.ChangeEvent
 import com.google.android.gms.drive.widget.DataBufferAdapter
+import org.json4s.JsonAST.JObject
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
@@ -133,9 +134,9 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     refreshAvailableMindmups()
     currentMindmupIds() = sharedPreferences.getStringSet("selected_mindmups", java.util.Collections.emptySet[String]).asScala.toSet
 
-
-    val taskListFragment = f[TaskListFragment[List[Map[String, Any]], TextView]](
-      currentTasks, taskFilterString, MindmupModel.queryInterpreter, taskListable[Map[String, Any]]
+    import org.json4s._
+    val taskListFragment = f[TaskListFragment[List[JObject], TextView]](
+      currentTasks, taskFilterString, MindmupModel.queryInterpreter[JObject], taskListable[JObject]
       ).framed(Id.taskList, Tag.taskList)
     val drawer = l[DrawerLayout](
       l[LinearLayout](
@@ -228,7 +229,7 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
   override def onStart: Unit = {
     googleApiClient success createGoogleApiClientOnlyWhenInOnStart
     super.onStart();
-    val frag = this.findFrag[TaskListFragment[List[Map[String, Any]], TextView]](Tag.taskList)
+    val frag = this.findFrag[TaskListFragment[List[JObject], TextView]](Tag.taskList)
     val taskListFragment = getUi(frag).get
     itemSelectionObserver = Obs(taskListFragment.itemSelections, skipInitial=true){
       val selectedItem = taskListFragment.itemSelections()
@@ -236,7 +237,7 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
         import com.fortysevendeg.macroid.extras.FragmentExtras._
         val taskList = this.find[FrameLayout](Id.taskList)
         val manager = getSupportFragmentManager
-        val builder = f[TaskDetailFragment[Map[String, Any]]](task, MindmupJsonTree.MindmupMapTreeLike)
+        val builder = f[TaskDetailFragment[JObject]](task, MindmupJsonTree.MindmupJsonTreeLike)
         val frag = builder.factory.get
         val stateId = manager.beginTransaction().replace(Id.taskList, frag, null).addToBackStack("Details").commit()
       }

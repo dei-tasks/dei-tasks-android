@@ -1,19 +1,23 @@
 package com.mindmup.android.tasks
 
+import org.json4s._
+import org.json4s.native.JsonMethods._
+import org.json4s.JsonDSL._
+
 import android.graphics.Color
 object MindmupJsonTree {
-  implicit object MindmupMapTreeLike extends TreeLike[Map[String, Any]] {
-    def name(t: Map[String, Any]): String = t("title").asInstanceOf[String]
-    def attachment(t: Map[String, Any]): Option[String] = t.get("attachment").map(_.asInstanceOf[Map[String, String]]("content"))
-    def color(t: Map[String, Any]): Option[Int] = {
-      for {
-        attr <- t.get("attr")
-        style <- attr.asInstanceOf[Map[String, Any]].get("style")
-        background <- style.asInstanceOf[Map[String, Any]].get("background") if background.isInstanceOf[String]
-      } yield(android.graphics.Color.parseColor(background.asInstanceOf[String].replaceFirst("#", "#FF")))
+  implicit object MindmupJsonTreeLike extends TreeLike[JObject] {
+    implicit val formats = DefaultFormats
+    def name(t: JObject): String = (t \ "title").extract[String]
+    def attachment(t: JObject): Option[String] = (t \ "attachment" \ "content").extract[Option[String]]
+    def color(t: JObject): Option[Int] = {
+      val backgroundStringOption = (t \ "attr" \ "style" \ "background" \\ classOf[JString]).headOption
+      backgroundStringOption.map { background =>
+          android.graphics.Color.parseColor(background.replaceFirst("#", "#FF"))
+      }
     }
-    def children(t: Map[String, Any]) = {
-      t.get("ideas").map(_.asInstanceOf[Map[String, Map[String, Any]]].values.toList).getOrElse(List())
+    def children(t: JObject) = {
+      (t \ "ideas").children.map(_.asInstanceOf[JObject])
     }
   }
 }
