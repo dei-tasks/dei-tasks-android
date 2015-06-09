@@ -19,17 +19,16 @@ object Implicits {
     } { string =>
       text(string)
     }
-  implicit def taskListable(implicit appCtx: AppContext, activityCtx: ActivityContext) =
-    Listable[List[Map[String, Any]]].tw {
+  implicit def taskListable[T: TreeLike](implicit appCtx: AppContext, activityCtx: ActivityContext) =
+    Listable[List[T]].tw {
       w[TextView]
     } { ml =>
-      var nodeText = ml.map(_.getOrElse("title", "NO TITLE")).mkString(" / ")
+      import TreeLike._
+      var nodeText = ml.map(_.title).mkString(" / ")
       val color = for {
         last <- ml.lastOption
-        attr <- last.get("attr")
-        style <- attr.asInstanceOf[Map[String, Any]].get("style")
-        background <- style.asInstanceOf[Map[String, Any]].get("background") if background.isInstanceOf[String]
-      } yield(android.graphics.Color.parseColor(background.asInstanceOf[String].replaceFirst("#", "#FF")))
+        color <- last.color
+      } yield(color)
 
       val tt = text(nodeText)
       color.map(c => tt + BgTweaks.color(c)).getOrElse(tt)

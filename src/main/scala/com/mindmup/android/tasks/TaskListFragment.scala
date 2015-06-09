@@ -13,20 +13,20 @@ import macroid.FullDsl._
 import macroid.IdGeneration
 import macroid.viewable._
 import macroid.contrib.LpTweaks._
-
+import CustomTweaks._
 import android.support.v4.app.Fragment
 
 import rx._
 import rx.ops._
 
 
-class TaskListFragment(currentTasks: Rx[Seq[List[Map[String, Any]]]], taskFilterString: Rx[String])
+class TaskListFragment[T, V <: View](currentTasks: Rx[Seq[T]], taskFilterString: Rx[String], queryInterpreter: CharSequence => (T => Boolean))(implicit val listable: Listable[T, V])
 extends Fragment with Contexts[Fragment] with RxSupport with IdGeneration {
   import FilterableListableListAdapter._
-  import Implicits._
+  val itemSelections: Var[Option[T]] = Var[Option[T]](None)
 
-  lazy val taskListView = w[ListView] <~
-    currentTasks.map(t => taskListable.filterableListAdapterTweak(t, MindmupModel.queryInterpreter)) <~
+  lazy val taskListView: Ui[ListView] = w[ListView] <~
+    currentTasks.map(t => listable.filterableListAdapterTweak(t, queryInterpreter)) <~
     taskFilterString.map { fs =>
       Tweak[ListView] { lv =>
         val adapter = lv.getAdapter.asInstanceOf[ListableListAdapter[_, _]]
@@ -36,11 +36,8 @@ extends Fragment with Contexts[Fragment] with RxSupport with IdGeneration {
       }
     } <~
     FuncOn.itemClick[ListView] { (_: AdapterView[_], _: View, index: Int, _: Long) =>
-      println(s"You clicked on item # $index")
-      println(s"That might be ${currentTasks()(index).last}")
-      import com.fortysevendeg.macroid.extras.FragmentExtras._
-      addFragment(f[TaskDetailFragment](currentTasks()(index)), Some(Id.taskList), Some(Tag.taskListTag))
-      println("After replacing fragment")
+      val selectedTask = getUi(taskListView).getItemAtPosition(index).asInstanceOf[T]
+      itemSelections()= Some(selectedTask)
       Ui(true)
     }
 
@@ -50,5 +47,6 @@ extends Fragment with Contexts[Fragment] with RxSupport with IdGeneration {
 }
 
 object TaskListFragment {
-  def newInstance(currentTasks: Rx[Seq[List[Map[String, Any]]]], taskFilterString: Rx[String]) = new TaskListFragment(currentTasks, taskFilterString: Rx[String])
+  def newInstance[T, V <: View](currentTasks: Rx[Seq[T]], taskFilterString: Rx[String], queryInterpreter: CharSequence => (T => Boolean), listable: Listable[T, V]) =
+    new TaskListFragment[T, V](currentTasks, taskFilterString, queryInterpreter)(listable)
 }

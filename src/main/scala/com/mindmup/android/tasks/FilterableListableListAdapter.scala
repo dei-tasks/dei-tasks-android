@@ -12,7 +12,6 @@ import java.util.ArrayList
 class FilterableListableListAdapter[A, W <: View](data: Seq[A], queryInterpreter: CharSequence => A => Boolean)(implicit ctx: ActivityContext, appCtx: AppContext, listable: Listable[A, W])
   extends ListableListAdapter[A, W](data) {
   override lazy val getFilter = {
-    println("Custom filtering")
     new CustomFilter
   }
   import scala.collection.JavaConverters._
@@ -46,12 +45,12 @@ class FilterableListableListAdapter[A, W <: View](data: Seq[A], queryInterpreter
 
 object FilterableListableListAdapter {
   implicit class FilterableListable[A, W <: View](listable: Listable[A, W]) {
-  /** An adapter to use with a `ListView` */
-  def filterableListAdapter(data: Seq[A], queryInterpreter: CharSequence => A => Boolean)(implicit ctx: ActivityContext, appCtx: AppContext): FilterableListableListAdapter[A, W] =
-    new FilterableListableListAdapter[A, W](data, queryInterpreter)(ctx, appCtx, listable)
+    /** An adapter to use with a `ListView` */
+    def filterableListAdapter(data: Seq[A], queryInterpreter: CharSequence => A => Boolean)(implicit ctx: ActivityContext, appCtx: AppContext): FilterableListableListAdapter[A, W] =
+      new FilterableListableListAdapter[A, W](data, queryInterpreter)(ctx, appCtx, listable)
 
-  /** A tweak to set the adapter of a `ListView` */
-  def filterableListAdapterTweak(data: Seq[A], queryInterpreter: CharSequence => A => Boolean)(implicit ctx: ActivityContext, appCtx: AppContext) =
-    ListTweaks.adapter(filterableListAdapter(data, queryInterpreter))
+    /** A tweak to set the adapter of a `ListView` */
+    def filterableListAdapterTweak(data: Seq[A], queryInterpreter: CharSequence => A => Boolean)(implicit ctx: ActivityContext, appCtx: AppContext) =
+      ListTweaks.adapter(filterableListAdapter(data, queryInterpreter))
   }
 }

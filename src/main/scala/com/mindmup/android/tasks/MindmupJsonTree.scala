@@ -1,19 +1,19 @@
 package com.mindmup.android.tasks
 
+import android.graphics.Color
 object MindmupJsonTree {
   implicit object MindmupMapTreeLike extends TreeLike[Map[String, Any]] {
-    def name(t: Map[String, Any]) = t("title").asInstanceOf[String]
+    def name(t: Map[String, Any]): String = t("title").asInstanceOf[String]
+    def attachment(t: Map[String, Any]): Option[String] = t.get("attachment").map(_.asInstanceOf[Map[String, String]]("content"))
+    def color(t: Map[String, Any]): Option[Int] = {
+      for {
+        attr <- t.get("attr")
+        style <- attr.asInstanceOf[Map[String, Any]].get("style")
+        background <- style.asInstanceOf[Map[String, Any]].get("background") if background.isInstanceOf[String]
+      } yield(android.graphics.Color.parseColor(background.asInstanceOf[String].replaceFirst("#", "#FF")))
+    }
     def children(t: Map[String, Any]) = {
       t.get("ideas").map(_.asInstanceOf[Map[String, Map[String, Any]]].values.toList).getOrElse(List())
     }
-  }
-  def allDescendants[T](t: T)(implicit tree: TreeLike[T]): Seq[T] = {
-    val children = tree.children(t)
-    children ++ children.flatMap(allDescendants(_)(tree))
-  }
-
-  def allDescendantsWithPaths[T](t: T)(implicit tree: TreeLike[T]): Seq[List[T]] = {
-    val children = tree.children(t)
-    (children.map(c => c :: Nil) ++ children.flatMap(allDescendantsWithPaths(_)(tree))).map(c => t :: c)
   }
 }

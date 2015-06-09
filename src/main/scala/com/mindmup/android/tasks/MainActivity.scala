@@ -97,7 +97,6 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     drawerToggle.setDrawerIndicatorEnabled(true)
   }
 */
-  def println(s: String): Unit = Log.i(TAG, s)
 
   private def createGoogleApiClientOnlyWhenInOnStart = {
     val connectionFailedListener: GoogleApiClient.OnConnectionFailedListener =
@@ -126,6 +125,7 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
   }
   override def onCreate(savedInstanceState: Bundle) = {
     import Implicits._
+    import MindmupJsonTree._
     super.onCreate(savedInstanceState)
     import android.support.v7.widget.Toolbar
     var toolbar = slot[Toolbar]
@@ -134,10 +134,12 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     currentMindmupIds() = sharedPreferences.getStringSet("selected_mindmups", java.util.Collections.emptySet[String]).asScala.toSet
 
 
-
-    lazy val drawer = l[DrawerLayout](
+    val taskListFragment = f[TaskListFragment[List[Map[String, Any]], TextView]](
+      currentTasks, taskFilterString, MindmupModel.queryInterpreter, taskListable[Map[String, Any]]
+      ).framed(Id.taskList, Tag.taskList)
+    val drawer = l[DrawerLayout](
       l[LinearLayout](
-        f[TaskListFragment](currentTasks, taskFilterString).framed(Id.taskList, Tag.taskListTag)
+        taskListFragment
       ) <~ matchParent,
       l[LinearLayout](
         f[MindmupFileSelection](selectableMindmups).framed(Id.mindmupFiles, Tag.mindmupFilesTag),
@@ -165,12 +167,12 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
       w[Toolbar] <~ matchWidth <~ wire(toolbar) <~ Tweak[Toolbar] { t =>
         t.setPopupTheme(R.style.AppTheme)
         setSupportActionBar(t)
+        getSupportActionBar.setHomeAsUpIndicator(R.drawable.ic_drawer)
         getSupportActionBar.setDisplayHomeAsUpEnabled(true)
         getSupportActionBar.setHomeButtonEnabled(true)
       },
       drawer
     ) <~ vertical <~ matchParent
-
     setContentView(getUi(view))
   }
 
@@ -221,9 +223,24 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     true
   }
 
+  var itemSelectionObserver: Obs = null
+  var selectedItem: Rx[Option[List[Map[String, Any]]]] = Var(None)
   override def onStart: Unit = {
     googleApiClient success createGoogleApiClientOnlyWhenInOnStart
     super.onStart();
+    val frag = this.findFrag[TaskListFragment[List[Map[String, Any]], TextView]](Tag.taskList)
+    val taskListFragment = getUi(frag).get
+    itemSelectionObserver = Obs(taskListFragment.itemSelections, skipInitial=true){
+      val selectedItem = taskListFragment.itemSelections()
+      selectedItem.foreach { task =>
+        import com.fortysevendeg.macroid.extras.FragmentExtras._
+        val taskList = this.find[FrameLayout](Id.taskList)
+        val manager = getSupportFragmentManager
+        val builder = f[TaskDetailFragment[Map[String, Any]]](task, MindmupJsonTree.MindmupMapTreeLike)
+        val frag = builder.factory.get
+        val stateId = manager.beginTransaction().replace(Id.taskList, frag, null).addToBackStack("Details").commit()
+      }
+    }
   }
 
 

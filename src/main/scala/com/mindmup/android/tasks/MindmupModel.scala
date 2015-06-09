@@ -75,6 +75,7 @@ class MindmupModel(googleApiClient: GoogleApiClient) {
     val parsed = contents.map(c => parse(c).asInstanceOf[JObject])
     println(s"Successfully parsed ${parsed.size} Mindmups")
     import MindmupJsonTree._
+    import TreeLike._
     implicit val formats = DefaultFormats
     val tasks = parsed.flatMap { json =>
       allDescendantsWithPaths(json.extract[Map[String, Any]])
