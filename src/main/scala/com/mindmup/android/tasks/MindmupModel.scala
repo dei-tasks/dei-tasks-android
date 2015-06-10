@@ -21,6 +21,9 @@ import com.google.android.gms.drive.query.Query
 import com.google.android.gms.drive.query.SearchableField
 import com.google.android.gms.drive.Metadata
 import com.google.android.gms.drive.events.ChangeEvent
+import com.gu.json._
+import com.gu.json.JValueSyntax._
+import com.gu.json.json4s.JsonLikeInstances.json4sJsonLike
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
@@ -78,7 +81,7 @@ class MindmupModel(googleApiClient: GoogleApiClient) {
     import TreeLike._
     implicit val formats = DefaultFormats
     val tasks = parsed.flatMap { json =>
-      allDescendantsWithPaths(json)
+      allDescendantsWithPaths(Cursor.cursor(json.asInstanceOf[JValue]))
     }
     println(s"Successfully taskified ${tasks.size} nodes")
     tasks
@@ -90,7 +93,7 @@ object MindmupModel {
     val ql = query.toString.toLowerCase.split(" ")
     val tl = implicitly[TreeLike[T]]
     val filter = { ml: List[T] =>
-      val titlePath = ml.map(tl.name(_)).mkString(" ").toLowerCase
+      val titlePath = ml.map(tl.title(_)).mkString(" ").toLowerCase
       ql.forall(titlePath.contains)
     }
     filter

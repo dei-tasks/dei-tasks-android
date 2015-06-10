@@ -3,7 +3,8 @@ package com.mindmup.android.tasks
 import org.json4s._
 
 trait TreeLike[T] {
-  def name(t: T): String
+  def title(t: T): String
+  def setTitle(t: T, title: String): T
   def attachment(t: T): Option[String]
   def color(t: T): Option[Int]
   def children(t: T): Seq[T]
@@ -21,7 +22,8 @@ object TreeLike {
   }
 
   implicit class RichTreeLike[T: TreeLike](val t: T) {
-    def title: String = implicitly[TreeLike[T]].name(t)
+    def title: String = implicitly[TreeLike[T]].title(t)
+    def title_= (title: String) = implicitly[TreeLike[T]].setTitle(t, title)
     def attachment: Option[String] = implicitly[TreeLike[T]].attachment(t)
     def color: Option[Int] = implicitly[TreeLike[T]].color(t)
   }

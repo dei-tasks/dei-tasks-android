@@ -1,9 +1,10 @@
 package com.mindmup.android.tasks
 
-import android.graphics.Color
+import scala.collection.mutable.Map
 object MindmupMapTree {
   implicit object MindmupMapTreeLike extends TreeLike[Map[String, Any]] {
-    def name(t: Map[String, Any]): String = t("title").asInstanceOf[String]
+    def title(t: Map[String, Any]): String = t("title").asInstanceOf[String]
+    def setTitle(t: Map[String, Any], title: String) = t.updated("title", title)
     def attachment(t: Map[String, Any]): Option[String] = t.get("attachment").map(_.asInstanceOf[Map[String, String]]("content"))
     def color(t: Map[String, Any]): Option[Int] = {
       for {

@@ -34,6 +34,8 @@ libraryDependencies ++= Seq(
   "net.sf.proguard" % "proguard-base" % "5.2.1",
   "com.google.android.gms" % "play-services-drive" % "7.3.0",
   "org.json4s" %% "json4s-native" % "3.2.11",
+  "com.gu" %% "json-zipper-core" % "0.2",
+  "com.gu" %% "json-zipper-json4s" % "0.2",
   "com.lihaoyi" %% "scalarx" % "0.2.8",
   "com.softwaremill.scalamacrodebug" %% "macros" % "0.4"
 )
@@ -58,3 +60,5 @@ proguardOptions in Android ++= Seq(
    public <init>(android.content.Context, android.util.AttributeSet);
   }"""
 )
+
+dexMaxHeap := "3072m"

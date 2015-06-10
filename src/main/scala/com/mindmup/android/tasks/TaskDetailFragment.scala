@@ -6,6 +6,7 @@ import android.content.IntentSender.SendIntentException
 import android.os.Bundle
 import android.util.Log
 import android.view._
+import android.view.inputmethod.EditorInfo
 import android.widget._
 import macroid._
 import macroid.contrib._
@@ -30,7 +31,16 @@ class TaskDetailFragment[T: TreeLike](task: List[T]) extends Fragment with Conte
     getUi {
       l[LinearLayout](
         w[TextView] <~ text("Title") <~ bold,
-        w[TextView] <~ text(task.last.title) <~ selectableText,
+        w[EditText] <~
+          text(task.last.title) <~
+          selectableText <~
+          imeOption(EditorInfo.IME_ACTION_DONE) <~
+          FuncOn.editorAction[EditText] { (v: TextView, actionId: Int, event: KeyEvent) =>
+            println(s"Got editor action $actionId on $v: $event\nText: ${v.getText}")
+            val updated = implicitly[TreeLike[T]].setTitle(task.last, v.getText.toString)
+            println(s"Updated structure is $updated")
+            Ui(true)
+          },
         w[TextView] <~ text("Attachment") <~ bold,
         w[TextView] <~ text(task.last.attachment.getOrElse("")) <~ selectableText
       ) <~ vertical

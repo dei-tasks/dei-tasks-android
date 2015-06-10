@@ -57,6 +57,14 @@ import macroid.util.Effector
 import rx._
 import rx.ops._
 
+import org.json4s._
+
+import com.gu.json._
+import com.gu.json.json4s.JsonLikeInstances.json4sJsonLike
+import Implicits._
+import MindmupJsonTree._
+
+
 
 
 object OurTweaks {
@@ -70,6 +78,8 @@ object OurTweaks {
 
 class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
   with ConnectionCallbacks with IdGeneration with RxSupport with SharedPreferences.OnSharedPreferenceChangeListener {
+  
+  type TaskType = Cursor[JValue]
   private val TAG = "MindmupTasks"
 
   private val REQUEST_CODE_OPENER = 1
@@ -125,8 +135,6 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     mindmupModel.map(_.findMindmups).foreach { mms => selectableMindmups() = mms }
   }
   override def onCreate(savedInstanceState: Bundle) = {
-    import Implicits._
-    import MindmupJsonTree._
     super.onCreate(savedInstanceState)
     import android.support.v7.widget.Toolbar
     var toolbar = slot[Toolbar]
@@ -134,9 +142,8 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     refreshAvailableMindmups()
     currentMindmupIds() = sharedPreferences.getStringSet("selected_mindmups", java.util.Collections.emptySet[String]).asScala.toSet
 
-    import org.json4s._
-    val taskListFragment = f[TaskListFragment[List[JObject], TextView]](
-      currentTasks, taskFilterString, MindmupModel.queryInterpreter[JObject], taskListable[JObject]
+    val taskListFragment = f[TaskListFragment[List[TaskType], TextView]](
+      currentTasks, taskFilterString, MindmupModel.queryInterpreter[TaskType], taskListable[TaskType]
       ).framed(Id.taskList, Tag.taskList)
     val drawer = l[DrawerLayout](
       l[LinearLayout](
@@ -229,15 +236,14 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
   override def onStart: Unit = {
     googleApiClient success createGoogleApiClientOnlyWhenInOnStart
     super.onStart();
-    val frag = this.findFrag[TaskListFragment[List[JObject], TextView]](Tag.taskList)
+    val frag = this.findFrag[TaskListFragment[List[TaskType], TextView]](Tag.taskList)
     val taskListFragment = getUi(frag).get
     itemSelectionObserver = Obs(taskListFragment.itemSelections, skipInitial=true){
       val selectedItem = taskListFragment.itemSelections()
       selectedItem.foreach { task =>
-        import com.fortysevendeg.macroid.extras.FragmentExtras._
         val taskList = this.find[FrameLayout](Id.taskList)
         val manager = getSupportFragmentManager
-        val builder = f[TaskDetailFragment[JObject]](task, MindmupJsonTree.MindmupJsonTreeLike)
+        val builder = f[TaskDetailFragment[TaskType]](task, MindmupJsonTree.mindmupJsonTreeLike[JValue])
         val frag = builder.factory.get
         val stateId = manager.beginTransaction().replace(Id.taskList, frag, null).addToBackStack("Details").commit()
       }
