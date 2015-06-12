@@ -21,8 +21,14 @@ object MindmupJsonTree {
     }
     def setProgress(t: JSON, progress: Progress) = {
       if(progress == NotStarted) {
-        t.attr -= "progress"
-        t.attr.style -= "background"
+        t match {
+          case json"""{"attr" : {"style" : $something}}""" =>
+            t.attr.style -= "background"
+            t.attr -= "progress"
+          case json"""{"attr" : $something}""" =>
+            t.attr -= "progress"
+          case _ => ()
+        }
       } else {
         t.attr.progress = PROGRESS_TO_STRING(progress)
         t.attr.style.background = PROGRESS_TO_COLOR(progress)
