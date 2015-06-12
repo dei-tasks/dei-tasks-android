@@ -9,20 +9,33 @@ import android.widget.AbsListView.MultiChoiceModeListener
 import android.widget._
 import com.malinskiy.materialicons.IconDrawable
 import com.malinskiy.materialicons.Iconify.IconValue
+import com.mindmup.android.tasks.Implicits._
 import macroid.FullDsl._
 import macroid.{IdGeneration, _}
 import macroid.viewable._
+import org.json4s.DefaultFormats
 import rx._
 import rx.ops._
 
 
-class TaskListFragment[T, V <: View](currentTasks: Rx[Seq[T]], queryInterpreter: CharSequence => (T => Boolean))(implicit val listable: Listable[T, V], val treeLike: TreeLike[T])
+class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], queryInterpreter: CharSequence => (List[T] => Boolean))(implicit val listable: Listable[List[T], V], val treeLike: TreeLike[T])
   extends Fragment with Contexts[Fragment] with RxSupport with IdGeneration with TaskUi[T] {
   import FilterableListableListAdapter._
   val taskFilterString = Var[String]("")
 
   val itemSelections: Var[Option[T]] = Var[Option[T]](None)
-
+  val currentTasks = Rx {
+    val parsed = idsWithTaskTrees()
+    println(s"Successfully parsed ${parsed.size} Mindmups")
+    import MindmupJsonTree._
+    import TreeLike._
+    implicit val formats = DefaultFormats
+    val tasks = parsed.flatMap { case (_, json) =>
+      allDescendantsWithPaths(json)
+    }.toList
+    println(s"Successfully taskified ${tasks.size} nodes")
+    tasks
+  }
   lazy val taskListView: Ui[ListView] = w[ListView] <~
     currentTasks.map(t => listable.filterableListAdapterTweak(t, queryInterpreter)) <~
     taskFilterString.map { fs =>
@@ -100,8 +113,8 @@ class TaskListFragment[T, V <: View](currentTasks: Rx[Seq[T]], queryInterpreter:
 }
 
 object TaskListFragment {
-  def newInstance[T, V <: View](currentTasks: Rx[Seq[T]], queryInterpreter: CharSequence => (T => Boolean), listable: Listable[T, V], treeLike: TreeLike[T]) = {
+  def newInstance[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], queryInterpreter: CharSequence => (List[T] => Boolean), listable: Listable[List[T], V], treeLike: TreeLike[T]) = {
     implicit val tl = treeLike
     implicit val la = listable
-    new TaskListFragment[T, V](currentTasks, queryInterpreter)
+    new TaskListFragment[T, V](idsWithTaskTrees, queryInterpreter)
   }}

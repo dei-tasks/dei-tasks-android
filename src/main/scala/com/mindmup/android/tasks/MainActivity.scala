@@ -100,18 +100,7 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     mindmupModel.map(_.retrieveTasks(mmIds))
   }.async(Map.empty)
 
-  val currentTasks = Rx {
-    val parsed = currentFilesWithJson()
-    println(s"Successfully parsed ${parsed.size} Mindmups")
-    import MindmupJsonTree._
-    import TreeLike._
-    implicit val formats = DefaultFormats
-    val tasks = parsed.flatMap { case (_, json) =>
-      allDescendantsWithPaths(json)
-    }.toList
-    println(s"Successfully taskified ${tasks.size} nodes")
-    tasks
-  }
+
   val selectableMindmups = Var[Seq[Metadata]](Seq.empty)
 
 /*  override def onPostCreate(savedInstanceState: Bundle) {
@@ -152,11 +141,11 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     var toolbar = slot[Toolbar]
     refreshAvailableMindmups()
     currentMindmupIds() = sharedPreferences.getStringSet("selected_mindmups", java.util.Collections.emptySet[String]).asScala.toSet
-    val taskListFragment = f[TaskListFragment[List[TaskType], TextView]](
-      currentTasks,
+    val taskListFragment = f[TaskListFragment[TaskType, TextView]](
+      currentFilesWithJson,
       MindmupModel.queryInterpreter[TaskType],
       taskListable[TaskType],
-      TreeLike.pathTreeLike[TaskType]
+      MindmupJsonTree.mindmupJsonTreeLike
       ).framed(Id.taskList, Tag.taskList)
     val drawer = l[DrawerLayout](
       l[LinearLayout](
