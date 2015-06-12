@@ -32,7 +32,7 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
     implicit val formats = DefaultFormats
     val tasks = parsed.flatMap { case (_, json) =>
       allDescendantsWithPaths(json)
-    }.toList
+    }.toList.sortBy(_.map(_.title).mkString("/"))
     println(s"Successfully taskified ${tasks.size} nodes")
     tasks
   }
