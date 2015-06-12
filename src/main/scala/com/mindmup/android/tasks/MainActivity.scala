@@ -91,7 +91,7 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
   var drawerSlot = slot[DrawerLayout]
   val currentMindmupIds = Var[Set[String]](Set.empty)
   val lastKnownChange = Var[Long](System.currentTimeMillis)
-  private val googleApiClient = promise[GoogleApiClient]
+  private val googleApiClient = Promise[GoogleApiClient]()
   private val mindmupModel = googleApiClient.future.map(new MindmupModel(_))
   val currentFilesWithJson = Rx {
     val mmIds = currentMindmupIds()
