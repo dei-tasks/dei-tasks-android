@@ -89,7 +89,7 @@ class TaskDetailFragment[T: TreeLike](task: List[T]) extends Fragment with Conte
   override def onOptionsItemSelected(item: MenuItem): Boolean = {
     actionMap.get(item.getItemId).map { action =>
       action(task.last)
-      menu.findItem(R.id.mark_progress).setIcon(PROGRESS_ICONS(task.last.progress))
+      menu.findItem(R.id.mark_progress).setIcon(PROGRESS_ICONS(PROGRESS_STATES(item.getItemId)))
       true
     }.getOrElse(super.onOptionsItemSelected(item))
   }
