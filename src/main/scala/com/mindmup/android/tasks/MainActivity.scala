@@ -256,7 +256,8 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
   var itemSelectionObserver: Obs = null
   var selectedItem: Rx[Option[List[Map[String, Any]]]] = Var(None)
   override def onStart: Unit = {
-    googleApiClient success createGoogleApiClientOnlyWhenInOnStart
+    if(!googleApiClient.isCompleted)
+      googleApiClient success createGoogleApiClientOnlyWhenInOnStart
     super.onStart()
     handleIntent(getIntent())
     itemSelectionObserver = Obs(taskListFragment.itemSelections, skipInitial=true){
