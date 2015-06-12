@@ -33,7 +33,7 @@ import TreeLike._
 class TaskDetailFragment[T: TreeLike](task: List[T]) extends Fragment with Contexts[Fragment] with RxSupport with TaskUi[T] {
   import TreeLike._
   def treeLike = implicitly[TreeLike[T]]
-
+  var menu: Menu = _
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View = {
     setHasOptionsMenu(true)
     import TextTweaks._
@@ -69,18 +69,27 @@ class TaskDetailFragment[T: TreeLike](task: List[T]) extends Fragment with Conte
     InProgress -> progressIcon("P", Color.YELLOW),
     NotStarted -> progressIcon("N", Color.GRAY)
   )
-
+  val PROGRESS_STATES = Map(
+    R.id.mark_done -> Done,
+    R.id.mark_in_progress -> InProgress,
+    R.id.mark_not_started -> NotStarted
+  )
   override def onCreateOptionsMenu(menu: Menu, inflater: MenuInflater): Unit = {
     inflater.inflate(R.menu.progress_menu, menu)
-    menu.findItem(R.id.mark_progress).setIcon(PROGRESS_ICONS(task.last.progress))
-    menu.findItem(R.id.mark_done).setIcon(PROGRESS_ICONS(Done))
-    menu.findItem(R.id.mark_in_progress).setIcon(PROGRESS_ICONS(InProgress))
-    menu.findItem(R.id.mark_not_started).setIcon(PROGRESS_ICONS(NotStarted))
+    PROGRESS_STATES.foreach { case(id, progress) =>
+      menu.findItem(id).setIcon(PROGRESS_ICONS(progress))
+    }
+    this.menu = menu
     super.onCreateOptionsMenu(menu, inflater)
+  }
+  override def onPrepareOptionsMenu(menu: Menu): Unit = {
+    menu.findItem(R.id.mark_progress).setIcon(PROGRESS_ICONS(task.last.progress))
+    super.onPrepareOptionsMenu(menu)
   }
   override def onOptionsItemSelected(item: MenuItem): Boolean = {
     actionMap.get(item.getItemId).map { action =>
       action(task.last)
+      menu.findItem(R.id.mark_progress).setIcon(PROGRESS_ICONS(task.last.progress))
       true
     }.getOrElse(super.onOptionsItemSelected(item))
   }
