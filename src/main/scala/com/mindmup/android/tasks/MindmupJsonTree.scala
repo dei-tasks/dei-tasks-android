@@ -1,41 +1,51 @@
 package com.mindmup.android.tasks
 
-import org.json4s._
-import org.json4s.native.JsonMethods._
-import org.json4s.JsonDSL._
-import com.gu.json._
-import J._
-import CursorArrowSyntax._
-import PStateSyntax._
-import com.gu.json.syntax._
-import com.gu.json.Lenses._
-import android.graphics.Color
-object MindmupJsonTree {
-  implicit def mindmupJsonTreeLike[J: JsonLike] = new TreeLike[Cursor[J]] {
-    implicit val formats = DefaultFormats
-    def title(t: Cursor[J]): String = (for {
-      tit <- t.field("title")
-      titleString <- asString(tit.focus)
-    } yield(titleString)).get
-    def setTitle(t: Cursor[J], title: String) = t.field("title").map(_.replace(string(title))).get
-    def attachment(t: Cursor[J]): Option[String] = for {
-      att <- t.field("attachment")
-      cont <- att.field("content")
-      str <- asString(cont.focus)
-    } yield(str)
-    def color(t: Cursor[J]): Option[Int] = for {
-      attr <- t.field("attr")
-      style <- attr.field("style")
-      background <- style.field("background")
-      backgroundString <- asString(background.focus)
-    } yield(Color.parseColor(backgroundString.replaceFirst("#", "#FF")))
-    def children(t: Cursor[J]) = (for {
-      ideas <- t.field("ideas")
-      keys <- ideas.keySet
-    } yield {
-        println(s"Ideas $ideas has the following keys: $keys")
-        keys.flatMap(ideas.field(_))
-      }.toSeq).getOrElse(Seq.empty)
 
+import rapture.json.{ JsonBuffer, jsonBackends, jsonStringContext }
+import jsonBackends.json4s._
+import android.graphics.Color
+
+object MindmupJsonTree {
+  implicit def mindmupJsonTreeLike = new TreeLike[JsonBuffer] {
+    import TreeLike._
+    type JSON = JsonBuffer
+    import rapture.data.Extractor.{ mapExtractor, optionExtractor }
+    def title(t: JSON): String = t.title.as[String]
+    def setTitle(t: JSON, title: String) = { t.title = title; t }
+    val PROGRESS_MAP = Map("passing" -> Done, "in-progress" -> InProgress)
+    val PROGRESS_TO_STRING = PROGRESS_MAP.map(_.swap)
+    val PROGRESS_TO_COLOR = Map(Done -> "#00CC00", InProgress -> "#FFCC00")
+    def progress(t: JSON) = t match {
+      case json"""{"attr": {"progress": $progress}}""" => PROGRESS_MAP(progress.as[String])
+      case _ => NotStarted
+    }
+    def setProgress(t: JSON, progress: Progress) = {
+      if(progress == NotStarted) {
+        t.attr -= "progress"
+        t.attr.style -= "background"
+      } else {
+        t.attr.progress = PROGRESS_TO_STRING(progress)
+        t.attr.style.background = PROGRESS_TO_COLOR(progress)
+      }
+      t
+    }
+    def attachment(t: JSON): Option[String] = t match {
+      case json"""{"atachment": {"content" : $content}}""" => Some(content.toString)
+      case _ => None
+    }
+    def color(t: JSON): Option[Int] = t match {
+      case json"""{"attr": {"style": {"background": $bg}}}""" => {
+        val background = bg.as[Option[String]]
+        background.map(b => Color.parseColor(b.replaceFirst("#", "#FF")))
+      }
+      case _ => None
+    }
+    def children(t: JSON) = t match {
+      case json"""{"ideas": $children}""" => {
+        val keys = children.asInstanceOf[JSON].as[Map[String, JSON]].keys.toList
+        keys.map(t.ideas.selectDynamic(_))
+      }
+      case _ => Seq.empty
+    }
   }
 }

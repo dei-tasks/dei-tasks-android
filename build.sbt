@@ -21,6 +21,8 @@ resolvers ++= Seq(Resolver.mavenLocal,
   Resolver.sonatypeRepo("releases"),
   Resolver.sonatypeRepo("snapshots"),
   "jcenter" at "http://jcenter.bintray.com",
+  Resolver.bintrayRepo("nightscape", "maven"),
+  Resolver.bintrayRepo("amulyakhare", "maven"),
   Resolver.defaultLocal)
 
 
@@ -29,13 +31,14 @@ libraryDependencies ++= Seq(
   aar("org.macroid" %% "macroid-viewable" % "2.0.0-M4"),
   aar("com.fortysevendeg" %% "macroid-extras" % "0.1.1"),
   aar("com.github.bmelnychuk" % "atv" % "1.2.4"),
+  "com.malinskiy" % "materialicons" % "1.0.1",
   "com.android.support" % "support-v4" % "22.1.1",
   "com.android.support" % "appcompat-v7" % "22.1.1",
+  "com.amulyakhare" % "com.amulyakhare.textdrawable" % "1.0.1",
   "net.sf.proguard" % "proguard-base" % "5.2.1",
   "com.google.android.gms" % "play-services-drive" % "7.3.0",
   "org.json4s" %% "json4s-native" % "3.2.11",
-  "com.gu" %% "json-zipper-core" % "0.2",
-  "com.gu" %% "json-zipper-json4s" % "0.2",
+  "com.propensive" %% "rapture-json-json4s" % "1.1.0",
   "com.lihaoyi" %% "scalarx" % "0.2.8",
   "com.softwaremill.scalamacrodebug" %% "macros" % "0.4"
 )
@@ -45,9 +48,14 @@ proguardOptions in Android ++= Seq(
   "-ignorewarnings",
   "-keep class scala.Dynamic",
   "-keep class scala.math.Numeric",
+  """-keepclassmembers public class scala.util.Try {
+    *;
+  }""",
   "-keep class scala.concurrent.ExecutionContext",
   "-keep class macroid.*",
   "-keep class macroid.**",
+  "-keep class com.malinskiy.materialicons.IconDrawable",
+
   "-keep class scala.collection.JavaConverters",
   "-keep class com.mindmup.android.tasks.*",
   "-keep class android.support.v4.** { *; }",

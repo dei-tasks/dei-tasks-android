@@ -59,8 +59,9 @@ import rx.ops._
 
 import org.json4s._
 
-import com.gu.json._
-import com.gu.json.json4s.JsonLikeInstances.json4sJsonLike
+
+import rapture.json.{JsonBuffer, Json}
+
 import Implicits._
 import MindmupJsonTree._
 
@@ -79,7 +80,7 @@ object OurTweaks {
 class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
   with ConnectionCallbacks with IdGeneration with RxSupport with SharedPreferences.OnSharedPreferenceChangeListener {
   
-  type TaskType = Cursor[JValue]
+  type TaskType = JsonBuffer
   private val TAG = "MindmupTasks"
 
   private val REQUEST_CODE_OPENER = 1
@@ -88,18 +89,29 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
 
   var navSlot = slot[ListView]
   var drawerSlot = slot[DrawerLayout]
-  val taskFilterString = Var[String]("")
   val currentMindmupIds = Var[Set[String]](Set.empty)
   val lastKnownChange = Var[Long](System.currentTimeMillis)
   private val googleApiClient = promise[GoogleApiClient]
   private val mindmupModel = googleApiClient.future.map(new MindmupModel(_))
-
-  val currentTasks = Rx {
+  val currentFilesWithJson = Rx {
     val mmIds = currentMindmupIds()
     val lastChange = lastKnownChange()
     println(s"Retrieving tasks for $mmIds, last known change $lastChange")
     mindmupModel.map(_.retrieveTasks(mmIds))
-  }.async(List.empty)
+  }.async(Map.empty)
+
+  val currentTasks = Rx {
+    val parsed = currentFilesWithJson()
+    println(s"Successfully parsed ${parsed.size} Mindmups")
+    import MindmupJsonTree._
+    import TreeLike._
+    implicit val formats = DefaultFormats
+    val tasks = parsed.flatMap { case (_, json) =>
+      allDescendantsWithPaths(json)
+    }.toList
+    println(s"Successfully taskified ${tasks.size} nodes")
+    tasks
+  }
   val selectableMindmups = Var[Seq[Metadata]](Seq.empty)
 
 /*  override def onPostCreate(savedInstanceState: Bundle) {
@@ -138,12 +150,13 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     super.onCreate(savedInstanceState)
     import android.support.v7.widget.Toolbar
     var toolbar = slot[Toolbar]
-    handleIntent(getIntent())
     refreshAvailableMindmups()
     currentMindmupIds() = sharedPreferences.getStringSet("selected_mindmups", java.util.Collections.emptySet[String]).asScala.toSet
-
     val taskListFragment = f[TaskListFragment[List[TaskType], TextView]](
-      currentTasks, taskFilterString, MindmupModel.queryInterpreter[TaskType], taskListable[TaskType]
+      currentTasks,
+      MindmupModel.queryInterpreter[TaskType],
+      taskListable[TaskType],
+      TreeLike.pathTreeLike[TaskType]
       ).framed(Id.taskList, Tag.taskList)
     val drawer = l[DrawerLayout](
       l[LinearLayout](
@@ -206,44 +219,52 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
   def handleIntent(intent: Intent): Unit = {
     if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
       val query = intent.getStringExtra(SearchManager.QUERY)
-      println(s"Got the following query: $query")
       val suggestions = new SearchRecentSuggestions(this,
                 RecentSearchesSuggestionProvider.AUTHORITY, RecentSearchesSuggestionProvider.MODE)
       suggestions.saveRecentQuery(query, null)
-      taskFilterString() = query
+      taskListFragment.taskFilterString() = query
     }
   }
 
   override def onCreateOptionsMenu(menu: Menu): Boolean = {
     val inflater = getMenuInflater();
     inflater.inflate(R.menu.options_menu, menu)
-    // Associate searchable configuration with the SearchView
-    val searchManager = getSystemService(Context.SEARCH_SERVICE).asInstanceOf[SearchManager]
-    val menuItem = menu.findItem(R.id.search)
-    val searchView = menuItem.getActionView().asInstanceOf[android.support.v7.widget.SearchView]
-    searchView.setOnQueryTextListener(new android.support.v7.widget.SearchView.OnQueryTextListener() {
-      def onQueryTextChange(text: String): Boolean = { taskFilterString()=text; true}
-      def onQueryTextSubmit(text: String): Boolean = { taskFilterString()=text; true}
-    })
-
-    val searchableInfo = searchManager.getSearchableInfo(getComponentName())
-    searchView.setSearchableInfo(searchableInfo)
-    true
+    super.onCreateOptionsMenu(menu)
   }
 
+  override def onOptionsItemSelected(item: MenuItem): Boolean = item.getItemId match {
+    case R.id.save =>
+      println("Ok, saving")
+      val successesFuture = Future.sequence(currentFilesWithJson().map { case(driveIdString, json) =>
+        val driveId = DriveId.decodeFromString(driveIdString)
+        mindmupModel.map { mm =>
+          mm.saveFile(driveId, json)
+        }
+      })
+      successesFuture.map { successes =>
+        if(successes.exists(!_)) {
+          runUi {
+            toast("Not all files could be saved successfully") <~ fry
+          }
+        }
+      }
+      true
+    case _ => super.onOptionsItemSelected(item)
+  }
+
+  def taskListFragment = getUi(this.findFrag[TaskListFragment[List[TaskType], TextView]](Tag.taskList)).get
   var itemSelectionObserver: Obs = null
   var selectedItem: Rx[Option[List[Map[String, Any]]]] = Var(None)
   override def onStart: Unit = {
     googleApiClient success createGoogleApiClientOnlyWhenInOnStart
-    super.onStart();
-    val frag = this.findFrag[TaskListFragment[List[TaskType], TextView]](Tag.taskList)
-    val taskListFragment = getUi(frag).get
+    super.onStart()
+    handleIntent(getIntent())
     itemSelectionObserver = Obs(taskListFragment.itemSelections, skipInitial=true){
       val selectedItem = taskListFragment.itemSelections()
       selectedItem.foreach { task =>
         val taskList = this.find[FrameLayout](Id.taskList)
         val manager = getSupportFragmentManager
-        val builder = f[TaskDetailFragment[TaskType]](task, MindmupJsonTree.mindmupJsonTreeLike[JValue])
+        val builder = f[TaskDetailFragment[TaskType]](task, MindmupJsonTree.mindmupJsonTreeLike)
         val frag = builder.factory.get
         val stateId = manager.beginTransaction().replace(Id.taskList, frag, null).addToBackStack("Details").commit()
       }

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/mark_progress"
+          android:title="@string/mark_progress"
+          android:menuCategory="system"
+          app:showAsAction="ifRoom"
+          >
+        <menu>
+            <item android:id="@+id/mark_done"
+                  android:title="@string/mark_done"
+                  android:menuCategory="system"
+                  app:showAsAction="ifRoom"
+                    />
+            <item android:id="@+id/mark_in_progress"
+                  android:title="@string/mark_in_progress"
+                  android:menuCategory="system"
+                  app:showAsAction="ifRoom"
+                    />
+            <item android:id="@+id/mark_not_started"
+                  android:title="@string/mark_not_started"
+                  android:menuCategory="system"
+                  app:showAsAction="ifRoom"
+                    />
+        </menu>
+    </item>
+</menu>

@@ -21,13 +21,13 @@ import com.google.android.gms.drive.query.Query
 import com.google.android.gms.drive.query.SearchableField
 import com.google.android.gms.drive.Metadata
 import com.google.android.gms.drive.events.ChangeEvent
-import com.gu.json._
-import com.gu.json.JValueSyntax._
-import com.gu.json.json4s.JsonLikeInstances.json4sJsonLike
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import scala.collection.JavaConverters._
+
+import rapture.json._
+import jsonBackends.json4s._
 
 class MindmupModel(googleApiClient: GoogleApiClient) {
 
@@ -69,26 +69,33 @@ class MindmupModel(googleApiClient: GoogleApiClient) {
     scala.io.Source.fromInputStream(driveContents.getInputStream()).mkString
   }
 
+  def saveFile(driveId: DriveId, content: MindmupModel.JSON): Boolean = {
+    googleApiClient.blockingConnect()
+    val file = Drive.DriveApi.getFile(googleApiClient, driveId);
+    val driveContentsResult =
+      file.open(googleApiClient, DriveFile.MODE_WRITE_ONLY, null).await();
+    println(s"Drive content results ${driveContentsResult} ${driveContentsResult.getStatus()}")
+    if (!driveContentsResult.getStatus().isSuccess()) {
+      println(s"Problem writing to file $driveId")
+    }
+    val driveContents = driveContentsResult.getDriveContents()
+    import formatters.humanReadable._
+    val out = Json.format(content)
+    println(s"Saving to $driveId the following content:\n$out")
+    driveContents.getOutputStream().write(out.getBytes())
+    val saveStatus = driveContents.commit(googleApiClient, null).await()
+    println(s"Save status is $saveStatus)")
+    saveStatus.isSuccess
+  }
   def retrieveTasks(currentMindmupIds: Set[String]) = {
-    import org.json4s._
-    import org.json4s.native.JsonMethods._
-    import org.json4s.JsonDSL._
     println(s"Loading tasks from these Mindmups: $currentMindmupIds")
     val contents = currentMindmupIds.toList.map(loadMindmup)
-    val parsed = contents.map(c => parse(c).asInstanceOf[JObject])
-    println(s"Successfully parsed ${parsed.size} Mindmups")
-    import MindmupJsonTree._
-    import TreeLike._
-    implicit val formats = DefaultFormats
-    val tasks = parsed.flatMap { json =>
-      allDescendantsWithPaths(Cursor.cursor(json.asInstanceOf[JValue]))
-    }
-    println(s"Successfully taskified ${tasks.size} nodes")
-    tasks
+    currentMindmupIds.zip(contents.map(c => Json.parse(c).as[MindmupModel.JSON])).toMap
   }
 }
 
 object MindmupModel {
+  type JSON = JsonBuffer
   def queryInterpreter[T: TreeLike]: CharSequence => List[T] => Boolean = { query =>
     val ql = query.toString.toLowerCase.split(" ")
     val tl = implicitly[TreeLike[T]]

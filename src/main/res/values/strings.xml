@@ -6,4 +6,8 @@
       displayed in the To Do lists</string>
     <string name="search_hint">Search Mindmups nodes</string>
     <string name="search_title">Search Mindmups nodes</string>
+    <string name="mark_progress">Set progress of task</string>
+    <string name="mark_done">Mark as done</string>
+    <string name="mark_in_progress">Mark as in progress</string>
+    <string name="mark_not_started">Mark as not started</string>
 </resources>
