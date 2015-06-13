@@ -40,7 +40,10 @@ libraryDependencies ++= Seq(
   "org.json4s" %% "json4s-native" % "3.2.11",
   "com.propensive" %% "rapture-json-json4s" % "1.1.0",
   "com.lihaoyi" %% "scalarx" % "0.2.8",
-  "com.softwaremill.scalamacrodebug" %% "macros" % "0.4"
+  "com.softwaremill.scalamacrodebug" %% "macros" % "0.4",
+  "org.scalatest" %% "scalatest" % "2.2.5" % Test,
+  "org.scalacheck" %% "scalacheck" % "1.12.2" % Test
+
 )
 
 

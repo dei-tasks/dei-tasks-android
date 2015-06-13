@@ -53,5 +53,17 @@ object MindmupJsonTree {
       }
       case _ => Seq.empty
     }
+    def addChild(t: JSON, child: JSON) = {
+      val root = t.$deref(Vector.empty)
+      val maxId = findMaxId(root)
+      t.ideas.updateDynamic(maxId.toString)(child)
+      t
+    }
+    def findMaxId(t: JSON): Int = {
+      (id(t) :: children(t).map(findMaxId _).toList).max
+    }
+    def id(t: JSON): Int = {
+      t.id.as[Int]
+    }
   }
 }

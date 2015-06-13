@@ -10,6 +10,7 @@ trait TreeLike[T] {
   def attachment(t: T): Option[String]
   def color(t: T): Option[Int]
   def children(t: T): Seq[T]
+  def addChild(t: T, child: T): T
 }
 
 object TreeLike {
@@ -46,5 +47,6 @@ object TreeLike {
     def attachment(t: PATH): Option[String] = treeLike.attachment(t.last)
     def color(t: PATH): Option[Int] = treeLike.color(t.last)
     def children(t: PATH) = treeLike.children(t.last).map(c => t ++ List(c))
+    def addChild(t: PATH, child: PATH) = t.dropRight(1) ++ List(treeLike.addChild(t.last, child.last))
   }
 }
