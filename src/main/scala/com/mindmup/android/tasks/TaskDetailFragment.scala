@@ -49,7 +49,7 @@ with TaskUi[T] with IdGeneration {
           text(task.last.title) <~
           selectableText <~
           FuncOn.editorAction[EditText] { (v: TextView, actionId: Int, event: KeyEvent) =>
-            implicitly[TreeLike[T]].setTitle(task.last, v.getText.toString)
+            updateTaskTitle()
             Ui(true)
           } <~
           showKeyboard <~
@@ -62,6 +62,15 @@ with TaskUi[T] with IdGeneration {
         w[EditText] <~ text(task.last.attachment.getOrElse("")) <~ selectableText
       ) <~ vertical
     }
+  }
+  def updateTaskTitle(): Unit = {
+    val edit = this.find[EditText](Id.taskTitleEditor).get.get
+    implicitly[TreeLike[T]].setTitle(task.last, edit.getText.toString)
+  }
+
+  override def onStop(): Unit = {
+    updateTaskTitle()
+    super.onStop()
   }
 
   override def onCreateOptionsMenu(menu: Menu, inflater: MenuInflater): Unit = {
