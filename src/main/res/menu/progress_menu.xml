@@ -3,6 +3,7 @@
       xmlns:app="http://schemas.android.com/apk/res-auto">
     <item android:id="@+id/mark_progress"
           android:title="@string/mark_progress"
+          android:icon="@android:drawable/btn_dropdown"
           android:menuCategory="system"
           app:showAsAction="ifRoom"
           >
