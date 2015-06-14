@@ -64,31 +64,10 @@ with TaskUi[T] with IdGeneration {
     }
   }
 
-  def actionBarHeight = TypedValue.applyDimension(1, 24.0f, this.getActivity.getResources().getDisplayMetrics()).toInt
-  def progressIcon(letter: String, color: Int) = {
-    TextDrawable.builder()
-      .beginConfig()
-      .width(actionBarHeight)  // width in px
-      .height(actionBarHeight) // height in px
-      .endConfig()
-      .buildRect(letter, color)
-  }
-  lazy val PROGRESS_ICONS = Map(
-    Done -> progressIcon("D", Color.GREEN),
-    InProgress -> progressIcon("P", Color.YELLOW),
-    NotStarted -> progressIcon("N", Color.GRAY)
-  )
-  val PROGRESS_STATES = Map(
-    R.id.mark_done -> Done,
-    R.id.mark_in_progress -> InProgress,
-    R.id.mark_not_started -> NotStarted
-  )
   override def onCreateOptionsMenu(menu: Menu, inflater: MenuInflater): Unit = {
     inflater.inflate(R.menu.progress_menu, menu)
-    PROGRESS_STATES.foreach { case(id, progress) =>
-      menu.findItem(id).setIcon(PROGRESS_ICONS(progress))
-    }
     this.menu = menu
+    updateIcons(menu)
     super.onCreateOptionsMenu(menu, inflater)
   }
   override def onPrepareOptionsMenu(menu: Menu): Unit = {
