@@ -53,22 +53,21 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
     } <~ Tweak[ListView] { listView =>
     listView.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE_MODAL)
     listView.setMultiChoiceModeListener(new MultiChoiceModeListener() {
+      def checkedItems = listView.getCheckedItemPositions
+      def checkedIndices = (0 until listView.getCount).filter(checkedItems.get(_))
+      def selectedItems = checkedIndices.map(listView.getItemAtPosition(_).asInstanceOf[List[T]].last)
 
       override def onItemCheckedStateChanged(mode: ActionMode,
                                              position: Int,
                                              id: Long,
-                                             checked: Boolean) {
+                                             checked: Boolean): Unit = {
+        mode.setTitle(s"${checkedItems.size} tasks selected")
       }
 
       override def onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean = {
-        val checkedItems = listView.getCheckedItemPositions
         println(s"Checked items $checkedItems, size ${checkedItems.size}")
-        val checkedIndices = (0 until listView.getCount).filter(checkedItems.get(_))
-        val items = checkedIndices.map(listView.getItemAtPosition(_).asInstanceOf[T])
-        println(s"Marking items $checkedIndices as done: $items")
-
         actionMap.get(item.getItemId).map { action: (T => Unit) =>
-          items.foreach(action)
+          selectedItems.foreach(action)
           mode.finish()
           true
         }.getOrElse({
