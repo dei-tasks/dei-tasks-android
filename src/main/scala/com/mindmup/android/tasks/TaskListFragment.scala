@@ -118,8 +118,8 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
     val menuItem = menu.findItem(R.id.search)
     val searchView = menuItem.getActionView().asInstanceOf[android.support.v7.widget.SearchView]
     searchView.setOnQueryTextListener(new android.support.v7.widget.SearchView.OnQueryTextListener() {
-      def onQueryTextChange(text: String): Boolean = { taskFilterString()=text; true}
-      def onQueryTextSubmit(text: String): Boolean = { taskFilterString()=text; true}
+      def onQueryTextChange(text: String): Boolean = { taskFilterString()=text; false}
+      def onQueryTextSubmit(text: String): Boolean = { taskFilterString()=text; false}
     })
 
     val searchableInfo = searchManager.getSearchableInfo(getActivity.getComponentName)
