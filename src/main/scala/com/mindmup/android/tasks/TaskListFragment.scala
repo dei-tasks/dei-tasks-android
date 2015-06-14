@@ -69,6 +69,7 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
         actionMap.get(item.getItemId).map { action: (T => Unit) =>
           selectedItems.foreach(action)
           mode.finish()
+          currentTasks.recalc()
           true
         }.getOrElse({
           item.getItemId match {
@@ -78,6 +79,7 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
                 val withChild = treeLike.addChild(item, newNode)
                 val child = treeLike.findChildByTitle(withChild, treeLike.title(newNode)).get
                 itemSelections() = Some(List(child))
+                currentTasks.recalc()
               }
               true
             case _ => false
