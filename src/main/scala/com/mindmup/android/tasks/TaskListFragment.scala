@@ -90,7 +90,7 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
         val inflater = mode.getMenuInflater
         inflater.inflate(R.menu.task_cab_menu, menu)
         inflater.inflate(R.menu.progress_menu, menu)
-
+        updateIcons(menu)
         true
       }
 
