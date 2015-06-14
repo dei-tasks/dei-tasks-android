@@ -1,13 +1,13 @@
 package com.mindmup.android.tasks
 
 import android.app._
-import android.content.{ Intent, IntentSender, Context, SharedPreferences }
+import android.content.{Intent, IntentSender, Context, SharedPreferences}
 import android.content.IntentSender.SendIntentException
 import android.graphics.Color
 import android.os.Bundle
 import android.util.{TypedValue, Log}
 import android.view._
-import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.{InputMethodManager, EditorInfo}
 import android.widget._
 import com.amulyakhare.textdrawable.TextDrawable
 import com.google.android.gms.drive.DriveId
@@ -30,27 +30,36 @@ import rx.ops._
 import scala.concurrent.Future
 import TreeLike._
 
-class TaskDetailFragment[T: TreeLike](task: List[T]) extends Fragment with Contexts[Fragment] with RxSupport with TaskUi[T] {
+class TaskDetailFragment[T: TreeLike](task: List[T]) extends Fragment with Contexts[Fragment] with RxSupport
+with TaskUi[T] with IdGeneration {
+
   import TreeLike._
+  import CustomTweaks._
+
   def treeLike = implicitly[TreeLike[T]]
   var menu: Menu = _
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View = {
     setHasOptionsMenu(true)
     import TextTweaks._
-    import CustomTweaks._
     getUi {
       l[LinearLayout](
         w[TextView] <~ text("Title") <~ bold,
         w[EditText] <~
+          id(Id.taskTitleEditor) <~
           text(task.last.title) <~
           selectableText <~
-          imeOption(EditorInfo.IME_ACTION_DONE) <~
           FuncOn.editorAction[EditText] { (v: TextView, actionId: Int, event: KeyEvent) =>
             implicitly[TreeLike[T]].setTitle(task.last, v.getText.toString)
             Ui(true)
+          } <~
+          showKeyboard <~
+          imeOption(EditorInfo.IME_ACTION_DONE) <~
+          Tweak[View] { v =>
+            v.clearFocus()
+            v.requestFocus()
           },
         w[TextView] <~ text("Attachment") <~ bold,
-        w[TextView] <~ text(task.last.attachment.getOrElse("")) <~ selectableText
+        w[EditText] <~ text(task.last.attachment.getOrElse("")) <~ selectableText
       ) <~ vertical
     }
   }
