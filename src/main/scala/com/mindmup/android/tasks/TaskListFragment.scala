@@ -71,7 +71,19 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
           items.foreach(action)
           mode.finish()
           true
-        }.getOrElse(false)
+        }.getOrElse({
+          item.getItemId match {
+            case R.id.add_child =>
+              selectedItems.foreach { item =>
+                val newNode = treeLike.newNode
+                val withChild = treeLike.addChild(item, newNode)
+                val child = treeLike.findChildByTitle(withChild, treeLike.title(newNode)).get
+                itemSelections() = Some(List(child))
+              }
+              true
+            case _ => false
+          }
+        })
       }
 
       override def onCreateActionMode(mode: ActionMode, menu: Menu): Boolean = {

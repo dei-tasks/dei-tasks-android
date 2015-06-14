@@ -1,7 +1,7 @@
 package com.mindmup.android.tasks
 
 
-import rapture.json.{ JsonBuffer, jsonBackends, jsonStringContext }
+import rapture.json.{ JsonBuffer, jsonBackends, jsonStringContext, jsonBufferStringContext }
 import jsonBackends.json4s._
 import android.graphics.Color
 
@@ -12,6 +12,9 @@ object MindmupJsonTree {
     import rapture.data.Extractor.{ mapExtractor, optionExtractor }
     def title(t: JSON): String = t.title.as[String]
     def setTitle(t: JSON, title: String) = { t.title = title; t }
+    def findChildByTitle(t: JSON, title: String) = {
+      children(t).find(_.title.as[String] == title)
+    }
     val PROGRESS_MAP = Map("passing" -> Done, "in-progress" -> InProgress)
     val PROGRESS_TO_STRING = PROGRESS_MAP.map(_.swap)
     val PROGRESS_TO_COLOR = Map(Done -> "#00CC00", InProgress -> "#FFCC00")
@@ -55,8 +58,9 @@ object MindmupJsonTree {
     }
     def addChild(t: JSON, child: JSON) = {
       val root = t.$deref(Vector.empty)
-      val maxId = findMaxId(root)
+      val maxId = findMaxId(root) + 1
       t.ideas.updateDynamic(maxId.toString)(child)
+      t.ideas.selectDynamic(maxId.toString).id = maxId
       t
     }
     def findMaxId(t: JSON): Int = {
@@ -64,6 +68,10 @@ object MindmupJsonTree {
     }
     def id(t: JSON): Int = {
       t.id.as[Int]
+    }
+    def newNode = {
+      val nodeName = s"Node ${System.currentTimeMillis}"
+       jsonBuffer"""{"title": $nodeName}"""
     }
   }
 }

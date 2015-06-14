@@ -14,7 +14,10 @@ import scala.reflect._
 @RunWith(classOf[JUnitRunner])
 class MindmupJsonTreeTest extends PropSpec with PropertyChecks with Matchers with GivenWhenThen {
   type JSON = JsonBuffer
-  val treeLike = MindmupJsonTree.mindmupJsonTreeLike
+  import rapture.data.Extractor.{mapExtractor, optionExtractor}
+  implicit val treeLike = MindmupJsonTree.mindmupJsonTreeLike
+  def strGen(n: Int) = Gen.listOfN(n, Gen.alphaChar).map(_.mkString)
+
   def mindmups(highestId: Int = 1, level: Int = 0): Gen[(JSON, Int)] = for {
     noChildren <- Gen.const((jsonBuffer"{}", highestId))
     (children, childrenHighestId) <- if (level > 5) Gen.const(noChildren)
@@ -34,15 +37,23 @@ class MindmupJsonTreeTest extends PropSpec with PropertyChecks with Matchers wit
       }
       Gen.frequency(1 -> Gen.const(noChildren), 3 -> someChildren)
     }
-  } yield (((json"""{"id": ${highestId}}""" ++ children).as[JSON], childrenHighestId))
+    title <- strGen(5)
+  } yield (((json"""{"id": ${highestId}, "title" : $title}""" ++ children).as[JSON], childrenHighestId))
   val children = Gen.const( json"""{"title": "foo"}""").map(_.as[JSON])
   property("finds the highest id correctly") {
     forAll(mindmups()) { case (mindmup, highestId) =>
       treeLike.findMaxId(mindmup) should equal(highestId)
     }
   }
-
-  import rapture.data.Extractor.{mapExtractor, optionExtractor}
+  property("finds children by title") {
+    forAll(mindmups()) { case (mindmup, _) =>
+      ideas(mindmup).as[Map[String, Map[String, JSON]]].values.foreach { child =>
+        child.get("title").foreach { title: JSON =>
+          treeLike.findChildByTitle(mindmup, title.as[String]).get.as[Map[String, JSON]] should equal(child)
+        }
+      }
+    }
+  }
 
   def ideas(node: JSON) = node match {
     case json"""{"ideas": $ideas}""" => ideas.asInstanceOf[JSON]
@@ -77,7 +88,13 @@ class MindmupJsonTreeTest extends PropSpec with PropertyChecks with Matchers wit
       ideasBefore should equal(ideasAfter - addedChildKey)
     },
     "when the parent does not have ideas yet, the ideas element will be created" -> { case (parent, child) => () },
-    "the new child node has the highest ID in the document" -> { case (parent, child) => () }
+    "the new child node has the highest ID in the document" -> { case (parent, child) =>
+      import TreeLike.RichTreeLike
+      val maxIdBefore = treeLike.findMaxId(parent)
+      val withChild = treeLike.addChild(parent, child)
+      val addedChild = withChild.findChildByTitle(child.title).get
+      addedChild.id.as[Int] should equal(maxIdBefore + 1)
+    }
   )
   addChildProperties.foreach { case (propertyName, check) =>
     property(propertyName) {
