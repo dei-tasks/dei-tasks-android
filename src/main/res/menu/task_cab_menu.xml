@@ -5,7 +5,15 @@
             android:title="@string/add_child"
             android:icon="@android:drawable/ic_menu_add"
             android:menuCategory="system"
-            android:orderInCategory="2"
+            android:orderInCategory="3"
             app:showAsAction="ifRoom"
               />
+    <item android:id="@+id/edit"
+        android:title="@string/add_child"
+        android:icon="@android:drawable/ic_menu_edit"
+        android:menuCategory="system"
+        android:orderInCategory="2"
+        app:showAsAction="ifRoom"
+        />
+
 </menu>

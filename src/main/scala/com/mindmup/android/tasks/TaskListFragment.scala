@@ -46,9 +46,8 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
         }
       }
     } <~
-    FuncOn.itemClick[ListView] { (_: AdapterView[_], _: View, index: Int, _: Long) =>
-      val selectedTask = getUi(taskListView).getItemAtPosition(index).asInstanceOf[T]
-      itemSelections() = Some(selectedTask)
+    FuncOn.itemClick[ListView] { (view: AdapterView[_], _: View, index: Int, _: Long) =>
+      view.asInstanceOf[ListView].setItemChecked(index, true)
       Ui(true)
     } <~ Tweak[ListView] { listView =>
     listView.setChoiceMode(AbsListView.CHOICE_MODE_MULTIPLE_MODAL)
@@ -66,9 +65,8 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
 
       override def onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean = {
         println(s"Checked items $checkedItems, size ${checkedItems.size}")
-        actionMap.get(item.getItemId).map { action: (T => Unit) =>
+        val result = actionMap.get(item.getItemId).map { action: (T => Unit) =>
           selectedItems.foreach(action)
-          mode.finish()
           currentTasks.recalc()
           true
         }.getOrElse({
@@ -82,9 +80,14 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
                 currentTasks.recalc()
               }
               true
+            case R.id.edit =>
+              itemSelections() = Some(selectedItems.takeRight(1).toList)
+              true
             case _ => false
           }
         })
+        mode.finish()
+        result
       }
 
       override def onCreateActionMode(mode: ActionMode, menu: Menu): Boolean = {
