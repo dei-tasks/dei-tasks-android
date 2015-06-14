@@ -23,7 +23,7 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
   import FilterableListableListAdapter._
   val taskFilterString = Var[String]("")
 
-  val itemSelections: Var[Option[T]] = Var[Option[T]](None)
+  val itemSelections: Var[Option[List[T]]] = Var[Option[List[T]]](None)
   val currentTasks = Rx {
     val parsed = idsWithTaskTrees()
     println(s"Successfully parsed ${parsed.size} Mindmups")

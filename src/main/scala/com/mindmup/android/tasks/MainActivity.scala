@@ -241,7 +241,7 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     case _ => super.onOptionsItemSelected(item)
   }
 
-  def taskListFragment = getUi(this.findFrag[TaskListFragment[List[TaskType], TextView]](Tag.taskList)).get
+  def taskListFragment = getUi(this.findFrag[TaskListFragment[TaskType, TextView]](Tag.taskList)).get
   var itemSelectionObserver: Obs = null
   var selectedItem: Rx[Option[List[Map[String, Any]]]] = Var(None)
   override def onStart: Unit = {
