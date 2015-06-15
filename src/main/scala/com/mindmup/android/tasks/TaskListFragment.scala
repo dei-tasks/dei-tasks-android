@@ -124,6 +124,8 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
 
     val searchableInfo = searchManager.getSearchableInfo(getActivity.getComponentName)
     searchView.setSearchableInfo(searchableInfo)
+    searchView.setIconifiedByDefault(false)
+    searchView.setQueryRefinementEnabled(true)
     super.onCreateOptionsMenu(menu, inflater)
   }
 }
