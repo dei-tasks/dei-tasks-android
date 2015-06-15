@@ -31,7 +31,8 @@ object Implicits {
       } yield(color)
 
       val tt = text(nodeText)
-      color.map(c => tt + BgTweaks.color(c)).getOrElse(tt)
+      val transparentColor = android.graphics.Color.parseColor("#00000000")
+      tt + BgTweaks.color(color.getOrElse(transparentColor))
     }
 
 }
