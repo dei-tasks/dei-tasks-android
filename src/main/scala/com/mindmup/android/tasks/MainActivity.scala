@@ -239,6 +239,7 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
       val suggestions = new SearchRecentSuggestions(this,
                 RecentSearchesSuggestionProvider.AUTHORITY, RecentSearchesSuggestionProvider.MODE)
       suggestions.saveRecentQuery(query, null)
+      suggestionsCursorAdapter.getCursor.requery()
       taskListFragment.taskFilterString() = query
     }
   }
