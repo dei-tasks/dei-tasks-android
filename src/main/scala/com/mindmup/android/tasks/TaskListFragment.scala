@@ -62,9 +62,9 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
       }
 
       override def onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean = {
-        println(s"Checked items $checkedItems, size ${checkedItems.size}")
         val result = actionMap.get(item.getItemId).map { action: (T => Unit) =>
           selectedItems.foreach(action)
+          mode.finish()
           currentTasks.recalc()
           true
         }.getOrElse({
@@ -75,16 +75,17 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
                 val withChild = treeLike.addChild(item, newNode)
                 val child = treeLike.findChildByTitle(withChild, treeLike.title(newNode)).get
                 itemSelections() = Some(List(child))
+                mode.finish()
                 currentTasks.recalc()
               }
               true
             case R.id.edit =>
               itemSelections() = Some(selectedItems.takeRight(1).toList)
+              mode.finish()
               true
             case _ => false
           }
         })
-        mode.finish()
         result
       }
 
