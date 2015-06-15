@@ -37,7 +37,6 @@ import com.google.android.gms.drive.query.SearchableField
 import com.google.android.gms.drive.Metadata
 import com.google.android.gms.drive.events.ChangeEvent
 import com.google.android.gms.drive.widget.DataBufferAdapter
-import org.json4s.JsonAST.JObject
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
@@ -57,8 +56,6 @@ import com.softwaremill.debug.DebugConsole._
 import macroid.util.Effector
 import rx._
 import rx.ops._
-
-import org.json4s._
 
 
 import rapture.json.{JsonBuffer, Json}

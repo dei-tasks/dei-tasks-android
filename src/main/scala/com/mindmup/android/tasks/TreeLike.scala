@@ -1,7 +1,5 @@
 package com.mindmup.android.tasks
 
-import org.json4s._
-
 trait TreeLike[T] {
   def title(t: T): String
   def setTitle(t: T, title: String): T

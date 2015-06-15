@@ -13,7 +13,6 @@ import com.mindmup.android.tasks.Implicits._
 import macroid.FullDsl._
 import macroid.{IdGeneration, _}
 import macroid.viewable._
-import org.json4s.DefaultFormats
 import rx._
 import rx.ops._
 
@@ -29,7 +28,6 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
     println(s"Successfully parsed ${parsed.size} Mindmups")
     import MindmupJsonTree._
     import TreeLike._
-    implicit val formats = DefaultFormats
     val tasks = parsed.flatMap { case (_, json) =>
       allDescendantsWithPaths(json)
     }.toList.sortBy(_.map(_.title).mkString("/"))
