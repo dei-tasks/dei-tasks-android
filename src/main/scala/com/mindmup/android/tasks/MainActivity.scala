@@ -3,6 +3,7 @@ package com.mindmup.android.tasks
 import android.app._
 import android.content.{ Intent, IntentSender, Context, SharedPreferences }
 import android.content.IntentSender.SendIntentException
+import android.net.Uri
 import android.os.Bundle
 import android.provider.SearchRecentSuggestions
 import android.util.Log
@@ -131,7 +132,20 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
   var todos = slot[ListView]
 
   def sharedPreferences = android.preference.PreferenceManager.getDefaultSharedPreferences(this)
+  lazy val suggestionsCursorAdapter = {
+    val suggestionsUri = Uri.parse(s"content://${RecentSearchesSuggestionProvider.AUTHORITY}/search_suggest_query?limit=50")
+    val selectionClause = " ?"
+    val selectionArgs = Array("")
+    val cursor = getContentResolver.query(suggestionsUri, null, selectionClause, selectionArgs, null)
+    new SimpleCursorAdapter(
+      getApplicationContext(),
+      android.R.layout.simple_list_item_activated_1,
+      cursor,
+      Array("suggest_text_1"),
+      Array(android.R.id.text1),
+      0)
 
+  }
   def refreshAvailableMindmups(): Unit = {
     mindmupModel.map(_.findMindmups).foreach { mms => selectableMindmups() = mms }
   }
@@ -157,7 +171,21 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
           openMindmupSelectionDialog
           refreshAvailableMindmups()
           Ui(true)
-        }
+        },
+        w[ListView] <~ Tweak[ListView] { listView =>
+          listView.setClickable(true)
+          listView.setAdapter(suggestionsCursorAdapter)
+        } <~
+          FuncOn.itemClick[ListView] { (view: AdapterView[_], _: View, index: Int, _: Long) =>
+            val cursor = suggestionsCursorAdapter.getCursor
+            cursor.moveToPosition(index)
+            val query = cursor.getString(cursor.getColumnIndex("suggest_text_1"))
+            val searchIntent = new Intent(MainActivity.this, classOf[MainActivity])
+            searchIntent.setAction(Intent.ACTION_SEARCH)
+            searchIntent.putExtra(SearchManager.QUERY, query);
+            startActivity(searchIntent);
+            Ui(true)
+          }
       ) <~ vertical
         <~ matchParent
         <~ BgTweaks.color(Color.parseColor("#FF164b64"))
