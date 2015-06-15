@@ -172,6 +172,14 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
           refreshAvailableMindmups()
           Ui(true)
         },
+        w[Button] <~ text("Clear recent searches") <~
+          On.click {
+            val suggestions = new SearchRecentSuggestions(this,
+              RecentSearchesSuggestionProvider.AUTHORITY, RecentSearchesSuggestionProvider.MODE)
+            suggestions.clearHistory()
+            refreshRecentQueries()
+            Ui(true)
+          },
         w[ListView] <~ Tweak[ListView] { listView =>
           listView.setClickable(true)
           listView.setAdapter(suggestionsCursorAdapter)
@@ -233,13 +241,17 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     handleIntent(intent)
   }
 
+  def refreshRecentQueries(): Unit = {
+    suggestionsCursorAdapter.getCursor.requery()
+    suggestionsCursorAdapter.notifyDataSetChanged()
+  }
   def handleIntent(intent: Intent): Unit = {
     if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
       val query = intent.getStringExtra(SearchManager.QUERY)
       val suggestions = new SearchRecentSuggestions(this,
                 RecentSearchesSuggestionProvider.AUTHORITY, RecentSearchesSuggestionProvider.MODE)
       suggestions.saveRecentQuery(query, null)
-      suggestionsCursorAdapter.getCursor.requery()
+      refreshRecentQueries()
       taskListFragment.taskFilterString() = query
     }
   }
