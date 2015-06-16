@@ -6,9 +6,10 @@ import jsonBackends.jawn._
 import android.graphics.Color
 
 object MindmupJsonTree {
-  implicit def mindmupJsonTreeLike = new TreeLike[JsonBuffer] {
+  implicit val mindmupJsonTreeLike = new TreeLike[JsonBuffer] {
     import TreeLike._
     type JSON = JsonBuffer
+    val maxIds = scala.collection.mutable.Map.empty[JSON, Int]
     import rapture.data.Extractor.{ mapExtractor, optionExtractor }
     def title(t: JSON): String = t.title.as[String]
     def setTitle(t: JSON, title: String) = { t.title = title; t }
@@ -56,22 +57,35 @@ object MindmupJsonTree {
       }
       case _ => Seq.empty
     }
+    def ideas(node: JSON) = node match {
+      case json"""{"ideas": $ideas}""" => ideas.asInstanceOf[JSON]
+      case _ => json"{}".as[JSON]
+    }
     def addChild(t: JSON, child: JSON) = {
-      val root = t.$deref(Vector.empty)
-      val maxId = findMaxId(root) + 1
-      t.ideas.updateDynamic(maxId.toString)(child)
-      t.ideas.selectDynamic(maxId.toString).id = maxId
+      val nodeId = child match {
+        case json"""{"id": $i}""" => i.as[Int]
+        case _ =>
+          val root = t.$deref(Vector.empty)
+          val maxId = findMaxId(root)
+          val newMaxId = maxId + 1
+          maxIds(root) = newMaxId
+          newMaxId
+      }
+      val maxIdeaKey = ideas(t).as[Map[String, JSON]].keySet.map(_.toInt).reduceOption(_ max _)
+      val newIdeaKey = (maxIdeaKey.getOrElse(0) + 1).toString
+      t.ideas.updateDynamic(newIdeaKey)(child)
+      t.ideas.selectDynamic(newIdeaKey).id = nodeId
       t
     }
     def findMaxId(t: JSON): Int = {
-      (id(t) :: children(t).map(findMaxId _).toList).max
+      maxIds.getOrElseUpdate(t, (id(t) :: children(t).map(findMaxId _).toList).max)
     }
     def id(t: JSON): Int = {
       t.id.as[Int]
     }
     def newNode = {
       val nodeName = s"Node ${System.currentTimeMillis}"
-       jsonBuffer"""{"title": $nodeName}"""
+      jsonBuffer"""{"title": $nodeName}"""
     }
   }
 }
