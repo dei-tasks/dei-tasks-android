@@ -2,7 +2,7 @@ package com.mindmup.android.tasks
 
 
 import rapture.json.{ JsonBuffer, jsonBackends, jsonStringContext, jsonBufferStringContext }
-import jsonBackends.spray._
+import jsonBackends.jawn._
 import android.graphics.Color
 
 object MindmupJsonTree {

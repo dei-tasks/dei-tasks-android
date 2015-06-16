@@ -37,7 +37,7 @@ libraryDependencies ++= Seq(
   "com.amulyakhare" % "com.amulyakhare.textdrawable" % "1.0.1",
   "net.sf.proguard" % "proguard-base" % "5.2.1",
   "com.google.android.gms" % "play-services-drive" % "7.3.0",
-  "com.propensive" %% "rapture-json-spray" % "1.1.0",
+  "com.propensive" %% "rapture-json-jawn" % "1.1.0",
   "com.lihaoyi" %% "scalarx" % "0.2.8",
   "com.softwaremill.scalamacrodebug" %% "macros" % "0.4",
   "org.scalatest" %% "scalatest" % "2.2.5" % Test,

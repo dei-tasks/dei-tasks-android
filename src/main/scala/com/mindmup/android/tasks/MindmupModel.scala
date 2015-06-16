@@ -27,7 +27,7 @@ import scala.concurrent._
 import scala.collection.JavaConverters._
 
 import rapture.json._
-import jsonBackends.spray._
+import jsonBackends.jawn._
 
 class MindmupModel(googleApiClient: GoogleApiClient) {
 

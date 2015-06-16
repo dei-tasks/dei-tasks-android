@@ -8,7 +8,7 @@ import org.scalatest.Matchers
 import org.scalatest.prop.PropertyChecks
 
 import rapture.json.{JsonBuffer, jsonBackends, jsonStringContext, jsonBufferStringContext}
-import jsonBackends.spray._
+import jsonBackends.jawn._
 import scala.reflect._
 
 @RunWith(classOf[JUnitRunner])
