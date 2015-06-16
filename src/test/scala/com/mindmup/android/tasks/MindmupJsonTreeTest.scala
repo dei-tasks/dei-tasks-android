@@ -18,6 +18,7 @@ class MindmupJsonTreeTest extends PropSpec with PropertyChecks with Matchers wit
   implicit val treeLike = MindmupJsonTree.mindmupJsonTreeLike
   def strGen(n: Int) = Gen.listOfN(n, Gen.alphaChar).map(_.mkString)
 
+  val titles = strGen(5)
   def mindmups(highestId: Int = 1, level: Int = 0): Gen[(JSON, Int)] = for {
     noChildren <- Gen.const((jsonBuffer"{}", highestId))
     (children, childrenHighestId) <- if (level > 5) Gen.const(noChildren)
@@ -37,9 +38,9 @@ class MindmupJsonTreeTest extends PropSpec with PropertyChecks with Matchers wit
       }
       Gen.frequency(1 -> Gen.const(noChildren), 3 -> someChildren)
     }
-    title <- strGen(5)
+    title <- titles
   } yield (((json"""{"id": ${highestId}, "title" : $title}""" ++ children).as[JSON], childrenHighestId))
-  val children = Gen.const( json"""{"title": "foo"}""").map(_.as[JSON])
+  val children = titles.map(t => json"""{"title": $t}""".as[JSON])
   property("finds the highest id correctly") {
     forAll(mindmups()) { case (mindmup, highestId) =>
       treeLike.findMaxId(mindmup) should equal(highestId)
@@ -71,19 +72,20 @@ class MindmupJsonTreeTest extends PropSpec with PropertyChecks with Matchers wit
       ideasMap.keys.toList.distinct.sorted should equal(ideasMap.keys.toList.sorted)
     },
     "the key-value pairs of the child are transferred to ideas under a unique key" -> { case (parent, child) =>
-      val withChild = treeLike.addChild(parent, child)
       val childMap = child.as[Map[String, JSON]]
+      val withChild = treeLike.addChild(parent, child)
       val ideasMap = ideas(withChild).as[Map[String, Map[String, JSON]]]
       exactly(1, ideasMap.values.map(_ - "id")) should equal(childMap)
     },
     "the other ideas remain untouched" -> { case (parent, child) =>
+      val childMap = child.as[Map[String, JSON]]
       val ideasBefore = ideas(parent).as[Map[String, JSON]]
       val withChild = treeLike.addChild(parent, child)
       val ideasAfter = ideas(withChild).as[Map[String, JSON]]
-      def findChild(child: JSON, ideas: JSON) = {
-        ideas.as[Map[String, Map[String, JSON]]].find(i => (i._2 - "id") == child.as[Map[String, JSON]])
+      def findChild(childMap: Map[String, JSON], ideas: JSON) = {
+        ideas.as[Map[String, Map[String, JSON]]].find(i => (i._2 - "id") == childMap)
       }
-      val addedChildKey = findChild(child, withChild.ideas).get._1
+      val addedChildKey = findChild(childMap, withChild.ideas).get._1
 
       ideasBefore should equal(ideasAfter - addedChildKey)
     },
