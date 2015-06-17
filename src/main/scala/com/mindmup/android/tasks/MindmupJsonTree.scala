@@ -9,7 +9,7 @@ object MindmupJsonTree {
   implicit val mindmupJsonTreeLike = new TreeLike[JsonBuffer] {
     import TreeLike._
     type JSON = JsonBuffer
-    val maxIds = scala.collection.mutable.Map.empty[JSON, Int]
+    val maxIds = scala.collection.mutable.Map.empty[String, Int]
     import rapture.data.Extractor.{ mapExtractor, optionExtractor }
     def title(t: JSON): String = t.title.as[String]
     def setTitle(t: JSON, title: String) = { t.title = title; t }
@@ -68,7 +68,7 @@ object MindmupJsonTree {
           val root = t.$deref(Vector.empty)
           val maxId = findMaxId(root)
           val newMaxId = maxId + 1
-          maxIds(root) = newMaxId
+          maxIds(title(root)) = newMaxId
           newMaxId
       }
       val maxIdeaKey = ideas(t).as[Map[String, JSON]].keySet.map(_.toInt).reduceOption(_ max _)
@@ -78,7 +78,7 @@ object MindmupJsonTree {
       t
     }
     def findMaxId(t: JSON): Int = {
-      maxIds.getOrElseUpdate(t, (id(t) :: children(t).map(findMaxId _).toList).max)
+      maxIds.getOrElseUpdate(title(t), (id(t) :: children(t).map(findMaxId _).toList).max)
     }
     def id(t: JSON): Int = {
       t.id.as[Int]
