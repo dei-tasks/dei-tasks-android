@@ -34,7 +34,7 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
     println(s"Successfully taskified ${tasks.size} nodes")
     tasks
   }
-  lazy val taskListView: Ui[ListView] = w[ListView] <~
+  lazy val taskListUi: Ui[ListView] = w[ListView] <~ id(Id.taskList) <~
     currentTasks.map(t => listable.filterableListAdapterTweak(t, queryInterpreter)) <~
     taskFilterString.map { fs =>
       Tweak[ListView] { lv =>
@@ -102,11 +102,17 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
       override def onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean = false
     })
   }
-
+  def taskStringsInView: Seq[String] = {
+    val view = taskListView
+    (0 until view.getChildCount).map(view.getChildAt(_).asInstanceOf[TextView].getText.toString)
+  }
+  def taskListView: ListView = {
+    getView.findViewById(Id.taskList).asInstanceOf[ListView]
+  }
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View = {
     setHasOptionsMenu(true)
     getUi {
-      taskListView
+      taskListUi
     }
   }
   override def onCreateOptionsMenu(menu: Menu, inflater: MenuInflater): Unit = {

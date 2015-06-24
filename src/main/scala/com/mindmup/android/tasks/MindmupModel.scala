@@ -30,7 +30,7 @@ import rapture.json._
 import jsonBackends.jawn._
 
 class MindmupModel(googleApiClient: GoogleApiClient) {
-
+  import MindmupModel._
   val mindmupFilter = Filters.contains(SearchableField.TITLE, ".mup")
   def findMindmups: Seq[Metadata] = {
     println("Finding Mindmups")
@@ -90,7 +90,7 @@ class MindmupModel(googleApiClient: GoogleApiClient) {
   def retrieveTasks(currentMindmupIds: Set[String]) = {
     println(s"Loading tasks from these Mindmups: $currentMindmupIds")
     val contents = currentMindmupIds.toList.map(loadMindmup)
-    currentMindmupIds.zip(contents.map(c => Json.parse(c).as[MindmupModel.JSON])).toMap
+    currentMindmupIds.zip(contents.map(parseMindmup)).toMap
   }
 }
 
@@ -105,4 +105,8 @@ object MindmupModel {
     }
     filter
   }
+  def parseMindmup(json: String): MindmupModel.JSON = {
+    Json.parse(json).as[MindmupModel.JSON]
+  }
+
 }

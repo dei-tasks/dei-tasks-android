@@ -311,6 +311,9 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     }
   }
 
+  def displayedTasks = {
+    taskListFragment.taskStringsInView
+  }
 
   def openMindmupSelectionDialog: Unit = {
     val openIntentFuture = googleApiClient.future.map { gapi =>

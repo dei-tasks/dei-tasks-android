@@ -4,6 +4,7 @@ import android.app.SearchManager
 import android.content.{Context, Intent}
 import android.util.FloatMath
 import com.google.android.gms.common.ConnectionResult
+import com.mindmup.android.tasks.TreeLike._
 import org.robolectric.{RuntimeEnvironment, Robolectric}
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.{ShadowPreferenceManager, ShadowLog}
@@ -15,19 +16,22 @@ import com.google.android.gms.drive.{DriveId, Drive}
 import org.scalatest.{Matchers, FeatureSpec, RobolectricSuite}
 import scala.collection.JavaConverters._
 import scala.io.Source
+import MindmupJsonTree._
 
 @Config(sdk = Array(21), manifest = "src/main/AndroidManifest.xml")
 class MainActivityTest extends FeatureSpec with Matchers with RobolectricSuite {
   override def robolectricShadows = Seq(classOf[ShadowDriveApi])
 
   ShadowLog.stream = System.out
+
+  val mindmupJsonString = Source.fromURL(getClass.getResource("/mindmup_tasks.mup")).getLines.mkString("\n")
+  val mindmupJson = MindmupModel.parseMindmup(mindmupJsonString)
   def setupSettingsAndDrive(): Unit = {
-    val mindmupJson = Source.fromURL(getClass.getResource("/mindmup_tasks.mup")).getLines.mkString("\n")
     val shadowDriveApi = new ShadowDriveApi
     ReflectionHelpers.setStaticField(classOf[Drive], "DriveApi", shadowDriveApi)
     val driveIdString = "DriveId:CAESHDBCMmh0cDdjdkdMdVZlRVJqWmpRd1QyaDRYMk0YhgIgyMuOlLVTKAA="
     val driveId = DriveId.decodeFromString(driveIdString)
-    shadowDriveApi.files.put(driveId, mindmupJson)
+    shadowDriveApi.files.put(driveId, mindmupJsonString)
     val sharedPreferences = ShadowPreferenceManager.getDefaultSharedPreferences(RuntimeEnvironment.application.getApplicationContext())
     sharedPreferences.edit().putStringSet("selected_mindmups", Set(driveIdString).asJava).commit()
   }
@@ -38,6 +42,13 @@ class MainActivityTest extends FeatureSpec with Matchers with RobolectricSuite {
       setupSettingsAndDrive()
       val activity = Robolectric.setupActivity(classOf[MainActivity])
       activity.getQuery should equal("")
+      val tasksInFile = allDescendantsWithPaths(mindmupJson)
+      shadowOf(activity.taskListFragment.taskListView).populateItems()
+      activity.displayedTasks.size should equal(tasksInFile.size)
+      activity.setQuery("search")
+      shadowOf(activity.taskListFragment.taskListView).populateItems()
+      activity.displayedTasks.size should equal(tasksInFile.count(_.exists(_.title.contains("search"))))
+
     }
     scenario("sets the query from a search intent on the search view") {
       val query = "fooboo"
