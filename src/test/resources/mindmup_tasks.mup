@@ -1,0 +1,126 @@
+{
+  "title": "Mindmup Tasks",
+  "id": 1,
+  "formatVersion": 2,
+  "ideas": {
+    "2": {
+      "title": "Extended filtering",
+      "attr": {
+        "style": {
+          "background": "#FFCC00"
+        },
+        "progress": "in-progress"
+      },
+      "ideas": {
+        "1": {
+          "title": "http://codetheory.in/android-filters/",
+          "id": 49
+        },
+        "2": {
+          "title": "https://github.com/macroid/macroid/tree/16cb506f5ececf8243d9e59743e86f66a01dc801/macroid-viewable/src/main/scala/macroid/viewable",
+          "id": 50
+        },
+        "3": {
+          "title": "by multiple words",
+          "attr": {
+            "style": {
+              "background": "#00CC00"
+            },
+            "progress": "passing"
+          },
+          "id": 51
+        },
+        "4": {
+          "title": "by progress",
+          "attr": {
+            "style": {}
+          },
+          "id": 52
+        },
+        "5": {
+          "title": "by multiple contexts",
+          "id": 53
+        }
+      },
+      "id": 48
+    },
+    "3": {
+      "title": "Show progress color",
+      "attr": {
+        "style": {
+          "background": "#00CC00"
+        },
+        "progress": "passing"
+      },
+      "ideas": {},
+      "id": 55
+    },
+    "4": {
+      "title": "Reuse MainActivity for search",
+      "attr": {
+        "style": {
+          "background": "#00CC00"
+        },
+        "progress": "passing"
+      },
+      "id": 63
+    },
+    "5": {
+      "title": "Make selection of files a setting",
+      "attr": {
+        "style": {
+          "background": "#00CC00"
+        },
+        "progress": "passing"
+      },
+      "ideas": {},
+      "id": 71
+    },
+    "-1": {
+      "title": "Copy task description or substring thereof",
+      "id": 47,
+      "attr": {
+        "style": {}
+      }
+    },
+    "-2": {
+      "title": "Persist searches as context",
+      "id": 54,
+      "attr": {
+        "style": {}
+      }
+    },
+    "-3": {
+      "title": "Show previous searches",
+      "attr": {
+        "style": {
+          "background": "#00CC00"
+        },
+        "progress": "passing"
+      },
+      "ideas": {
+        "1": {
+          "title": "http://developer.android.com/guide/topics/search/adding-recent-query-suggestions.html",
+          "id": 61
+        },
+        "2": {
+          "title": "http://developer.android.com/reference/android/content/SearchRecentSuggestionsProvider.html",
+          "id": 62
+        }
+      },
+      "id": 60
+    },
+    "-4": {
+      "title": "Show nodes as To Do list",
+      "attr": {
+        "style": {
+          "background": "#00CC00"
+        },
+        "progress": "passing"
+      },
+      "ideas": {},
+      "id": 64
+    }
+  },
+  "links": []
+}

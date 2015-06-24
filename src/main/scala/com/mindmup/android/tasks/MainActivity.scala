@@ -253,6 +253,18 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
     }
   }
 
+  private def searchView: android.support.v7.widget.SearchView = {
+    val searchMenu = this.findViewById(R.id.search).asInstanceOf[android.support.v7.internal.view.menu.ActionMenuItemView]
+    val itemData = searchMenu.getItemData
+    val actionView = itemData.getActionView
+    actionView.asInstanceOf[android.support.v7.widget.SearchView]
+  }
+  def getQuery = {
+    searchView.getQuery
+  }
+  def setQuery(query: CharSequence, submit: Boolean = false): Unit = {
+    Option(searchView).foreach(_.setQuery(query, submit))
+  }
   override def onCreateOptionsMenu(menu: Menu): Boolean = {
     val inflater = getMenuInflater();
     inflater.inflate(R.menu.options_menu, menu)

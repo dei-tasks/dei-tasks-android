@@ -23,6 +23,7 @@ resolvers ++= Seq(Resolver.mavenLocal,
   "jcenter" at "http://jcenter.bintray.com",
   Resolver.bintrayRepo("nightscape", "maven"),
   Resolver.bintrayRepo("amulyakhare", "maven"),
+  "RoboTest releases" at "https://raw.github.com/zbsz/mvn-repo/master/releases/",
   Resolver.defaultLocal)
 
 
@@ -40,6 +41,9 @@ libraryDependencies ++= Seq(
   "com.propensive" %% "rapture-json-jawn" % "1.1.0",
   "com.lihaoyi" %% "scalarx" % "0.2.8",
   "com.softwaremill.scalamacrodebug" %% "macros" % "0.4",
+  "com.geteit" %% "robotest" % "0.10" % Test,
+  "org.robolectric" % "shadows-play-services" % "3.0-SNAPSHOT" % Test,
+  "org.robolectric" % "shadows-support-v4" % "3.0-SNAPSHOT" % Test,
   "org.scalatest" %% "scalatest" % "2.2.5" % Test,
   "org.scalacheck" %% "scalacheck" % "1.12.2" % Test
 
