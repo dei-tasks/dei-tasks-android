@@ -49,6 +49,7 @@ libraryDependencies ++= Seq(
 
 )
 
+fork in Test := true
 
 proguardOptions in Android ++= Seq(
   "-ignorewarnings",
