@@ -15,7 +15,8 @@ import macroid.{IdGeneration, _}
 import macroid.viewable._
 import rx._
 import rx.ops._
-
+import scala.concurrent._
+import ExecutionContext.Implicits.global
 
 class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], queryInterpreter: CharSequence => (List[T] => Boolean))(implicit val listable: Listable[List[T], V], val treeLike: TreeLike[T])
   extends Fragment with Contexts[Fragment] with RxSupport with IdGeneration with TaskUi[T] {
@@ -26,7 +27,6 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
   val currentTasks = Rx {
     val parsed = idsWithTaskTrees()
     println(s"Successfully parsed ${parsed.size} Mindmups")
-    import MindmupJsonTree._
     import TreeLike._
     val tasks = parsed.flatMap { case (_, json) =>
       allDescendantsWithPaths(json)
@@ -65,7 +65,6 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
         val result = actionMap.get(item.getItemId).map { action: (T => Unit) =>
           selectedItems.foreach(action)
           mode.finish()
-          currentTasks.recalc()
           true
         }.getOrElse({
           item.getItemId match {
@@ -76,7 +75,7 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
                 val child = treeLike.findChildByTitle(withChild, treeLike.title(newNode)).get
                 itemSelections() = Some(List(child))
                 mode.finish()
-                currentTasks.recalc()
+                Future { currentTasks.recalc() }
               }
               true
             case R.id.edit =>
