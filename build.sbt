@@ -30,7 +30,7 @@ resolvers ++= Seq(Resolver.mavenLocal,
 libraryDependencies ++= Seq(
   aar("org.macroid" %% "macroid" % "2.0.0-M4"),
   aar("org.macroid" %% "macroid-viewable" % "2.0.0-M4"),
-  aar("com.fortysevendeg" %% "macroid-extras" % "0.1.1"),
+  aar("com.fortysevendeg" %% "macroid-extras" % "0.2"),
   aar("com.github.bmelnychuk" % "atv" % "1.2.4"),
   "com.malinskiy" % "materialicons" % "1.0.1",
   "com.android.support" % "support-v4" % "22.1.1",
@@ -45,7 +45,7 @@ libraryDependencies ++= Seq(
   "org.robolectric" % "shadows-play-services" % "3.0-SNAPSHOT" % Test,
   "org.robolectric" % "shadows-support-v4" % "3.0-SNAPSHOT" % Test,
   "org.scalatest" %% "scalatest" % "2.2.5" % Test,
-  "org.scalacheck" %% "scalacheck" % "1.12.2" % Test
+  "org.scalacheck" %% "scalacheck" % "1.12.4" % Test
 
 )
 
