@@ -102,12 +102,16 @@ class TaskListFragment[T, V <: View](idsWithTaskTrees: Rx[Map[String, T]], query
       override def onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean = false
     })
   }
-  def taskStringsInView: Seq[String] = {
+  def taskTextViews = {
     val view = taskListView
-    (0 until view.getChildCount).map(view.getChildAt(_).asInstanceOf[TextView].getText.toString)
+    (0 until view.getChildCount).map(view.getChildAt(_).asInstanceOf[TextView])
   }
+  def taskStringsInView: Seq[String] = taskTextViews.map(_.getText.toString)
   def taskListView: ListView = {
     getView.findViewById(Id.taskList).asInstanceOf[ListView]
+  }
+  def findTaskByPath(path: List[String]): Option[TextView] = {
+    taskTextViews.find(_.getText == path.mkString(" / "))
   }
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, savedInstanceState: Bundle): View = {
     setHasOptionsMenu(true)

@@ -292,6 +292,7 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
   }
 
   def taskListFragment = getUi(this.findFrag[TaskListFragment[TaskType, TextView]](Tag.taskList)).get
+  def findTaskByPath(path: List[String]): Option[TextView] = taskListFragment.findTaskByPath(path)
   var itemSelectionObserver: Obs = null
   var selectedItem: Rx[Option[List[Map[String, Any]]]] = Var(None)
   override def onStart: Unit = {

@@ -19,8 +19,7 @@ import com.google.android.gms.drive.events.{ChangeListener, ChangeEvent}
 import scala.collection.mutable
 
 @Implements(classOf[com.google.android.gms.drive.internal.zzq])
-class ShadowDriveApi extends DriveApi {
-  val files: mutable.Map[DriveId, String] = mutable.HashMap.empty
+class ShadowDriveApi(files: Map[DriveId, String]) extends DriveApi {
   @Implementation
   def getFile(googleApiClient: GoogleApiClient, driveId: DriveId): DriveFile =
     new ShadowDriveFile(driveId, files(driveId))

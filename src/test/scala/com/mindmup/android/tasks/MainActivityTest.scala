@@ -11,7 +11,7 @@ import org.robolectric.shadows.{ShadowPreferenceManager, ShadowLog}
 import org.robolectric.Shadows._
 import org.robolectric.internal.ShadowExtractor
 import org.robolectric.util.ReflectionHelpers
-import org.robolectric.shadows.gms.ShadowGooglePlayServicesUtil
+//import org.robolectric.shadows.gms.ShadowGooglePlayServicesUtil
 import com.google.android.gms.drive.{DriveId, Drive}
 import org.scalatest.{Matchers, FeatureSpec, RobolectricSuite}
 import scala.collection.JavaConverters._
@@ -27,11 +27,10 @@ class MainActivityTest extends FeatureSpec with Matchers with RobolectricSuite {
   val mindmupJsonString = Source.fromURL(getClass.getResource("/mindmup_tasks.mup")).getLines.mkString("\n")
   val mindmupJson = MindmupModel.parseMindmup(mindmupJsonString)
   def setupSettingsAndDrive(): Unit = {
-    val shadowDriveApi = new ShadowDriveApi
-    ReflectionHelpers.setStaticField(classOf[Drive], "DriveApi", shadowDriveApi)
     val driveIdString = "DriveId:CAESHDBCMmh0cDdjdkdMdVZlRVJqWmpRd1QyaDRYMk0YhgIgyMuOlLVTKAA="
     val driveId = DriveId.decodeFromString(driveIdString)
-    shadowDriveApi.files.put(driveId, mindmupJsonString)
+    val shadowDriveApi = new ShadowDriveApi(Map(driveId -> mindmupJsonString))
+    ReflectionHelpers.setStaticField(classOf[Drive], "DriveApi", shadowDriveApi)
     val sharedPreferences = ShadowPreferenceManager.getDefaultSharedPreferences(RuntimeEnvironment.application.getApplicationContext())
     sharedPreferences.edit().putStringSet("selected_mindmups", Set(driveIdString).asJava).commit()
   }
