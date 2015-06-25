@@ -71,8 +71,8 @@ object MindmupJsonTree {
           maxIds(title(root)) = newMaxId
           newMaxId
       }
-      val maxIdeaKey = ideas(t).as[Map[String, JSON]].keySet.map(_.toInt).reduceOption(_ max _)
-      val newIdeaKey = (maxIdeaKey.getOrElse(0) + 1).toString
+      val maxIdeaKey = ideas(t).as[Map[String, JSON]].keySet.map(BigDecimal.apply(_)).reduceOption(_ max _)
+      val newIdeaKey = (maxIdeaKey.getOrElse(BigDecimal(0)) + 1).toString
       t.ideas.updateDynamic(newIdeaKey)(child)
       t.ideas.selectDynamic(newIdeaKey).id = nodeId
       t
