@@ -63,6 +63,7 @@ with TaskUi[T] with IdGeneration {
       ) <~ vertical
     }
   }
+  def titleEditor: EditText = getUi(this.find[EditText](Id.taskTitleEditor)).get
   def updateTaskTitle(): Unit = {
     val edit = this.find[EditText](Id.taskTitleEditor).get.get
     implicitly[TreeLike[T]].setTitle(task.last, edit.getText.toString)

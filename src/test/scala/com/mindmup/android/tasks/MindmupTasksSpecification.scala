@@ -3,11 +3,11 @@ package com.mindmup.android.tasks
 import com.google.android.gms.drive.{Drive, DriveId}
 import com.mindmup.android.tasks.TreeLike._
 import com.mindmup.android.tasks.MindmupJsonTree._
-import org.robolectric.{RuntimeEnvironment, Robolectric}
+import org.robolectric.{ShadowsAdapter, Shadows, RuntimeEnvironment, Robolectric}
 import org.robolectric.Shadows._
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.{ShadowPreferenceManager, ShadowLog}
-import org.robolectric.util.ReflectionHelpers
+import org.robolectric.util.{ActivityController, ReflectionHelpers}
 import org.scalacheck.{Shrink, Gen, Prop}
 import Prop._
 import org.scalacheck.commands.Commands
@@ -101,6 +101,19 @@ class CommandsMindmupTasks extends FeatureSpec with Checkers with RobolectricSui
       }
     }
 
+    case class AddSubTask(parentPath: List[String], title: String) extends UnitCommand {
+      def run(s: Sut) = {
+        val view = s.findTaskByPath(parentPath)
+        view.get.performClick()
+        shadowOf(s).clickMenuItem(R.id.add_child)
+        ActivityController.of(null, s)
+        s.taskDetailsFragment.titleEditor.setText(title)
+        s.getSupportFragmentManager.popBackStack()
+      }
+      def nextState(s: State) = s
+      override def preCondition(state: State): Boolean = state.shownTasks.contains(parentPath.last)
+      def postCondition(s: State, success: Boolean) = success
+    }
     // This is our command generator. Given an abstract state, the generator
     // should return a command that is allowed to run in that state. Note that
     // it is still neccessary to define preconditions on the commands if there
