@@ -285,6 +285,10 @@ class MainActivity extends AppCompatActivity with Contexts[FragmentActivity]
           runUi {
             toast("Not all files could be saved successfully") <~ fry
           }
+        } else {
+          runUi {
+            toast("All files saved successfully") <~ fry
+          }
         }
       }
       true
