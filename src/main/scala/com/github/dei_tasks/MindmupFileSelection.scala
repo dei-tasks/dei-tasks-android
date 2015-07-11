@@ -1,4 +1,4 @@
-package com.mindmup.android.tasks
+package com.github.dei_tasks
 
 import android.support.v4.app.Fragment
 import android.view._

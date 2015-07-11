@@ -1,4 +1,4 @@
-package com.mindmup.android.tasks
+package com.github.dei_tasks
 
 import android.app.SearchManager
 import android.os.Bundle
@@ -9,7 +9,7 @@ import android.widget.AbsListView.MultiChoiceModeListener
 import android.widget._
 import com.malinskiy.materialicons.IconDrawable
 import com.malinskiy.materialicons.Iconify.IconValue
-import com.mindmup.android.tasks.Implicits._
+import com.github.dei_tasks.Implicits._
 import macroid.FullDsl._
 import macroid.{IdGeneration, _}
 import macroid.viewable._

@@ -1,4 +1,4 @@
-name := """mindmup-tasks"""
+name := "divide-et-impera"
 
 version := "1.0.0"
 
@@ -64,7 +64,7 @@ proguardOptions in Android ++= Seq(
   "-keep class com.malinskiy.materialicons.IconDrawable",
 
   "-keep class scala.collection.JavaConverters",
-  "-keep class com.mindmup.android.tasks.*",
+  "-keep class com.github.dei_tasks.*",
   "-keep class android.support.v4.** { *; }",
   "-keep interface android.support.v4.** { *; }",
   "-keep class android.support.v7.** { *; }",

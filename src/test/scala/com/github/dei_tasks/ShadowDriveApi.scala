@@ -1,4 +1,4 @@
-package com.mindmup.android.tasks
+package com.github.dei_tasks
 
 import java.io.{ByteArrayInputStream, OutputStream, InputStream}
 import java.nio.charset.StandardCharsets

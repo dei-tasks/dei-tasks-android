@@ -1,4 +1,4 @@
-package com.mindmup.android.tasks
+package com.github.dei_tasks
 
 import macroid.util.Effector
 import rx._

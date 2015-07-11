@@ -1,4 +1,4 @@
-package com.mindmup.android.tasks
+package com.github.dei_tasks
 
 import android.view._
 import android.widget._
@@ -10,7 +10,7 @@ import macroid.viewable._
 import android.util.Log
 
 object Implicits {
-  private val TAG = "MindmupTasks"
+  private val TAG = "DEITasks"
   def println(s: String): Unit = Log.i(TAG, s)
 
   implicit def stringListable(implicit appCtx: AppContext, activityCtx: ActivityContext) =

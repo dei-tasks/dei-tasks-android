@@ -1,10 +1,10 @@
-package com.mindmup.android.tasks
+package com.github.dei_tasks
 
 import android.app.SearchManager
 import android.content.{Context, Intent}
 import android.util.FloatMath
 import com.google.android.gms.common.ConnectionResult
-import com.mindmup.android.tasks.TreeLike._
+import com.github.dei_tasks.TreeLike._
 import org.robolectric.{RuntimeEnvironment, Robolectric}
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.{ShadowPreferenceManager, ShadowLog}

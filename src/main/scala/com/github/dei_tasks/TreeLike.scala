@@ -1,4 +1,4 @@
-package com.mindmup.android.tasks
+package com.github.dei_tasks
 
 trait TreeLike[T] {
   def title(t: T): String

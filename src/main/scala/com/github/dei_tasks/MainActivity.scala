@@ -1,4 +1,4 @@
-package com.mindmup.android.tasks
+package com.github.dei_tasks
 
 import android.app._
 import android.content.{ Intent, IntentSender, Context, SharedPreferences }

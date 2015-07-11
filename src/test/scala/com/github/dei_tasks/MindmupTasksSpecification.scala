@@ -1,8 +1,8 @@
-package com.mindmup.android.tasks
+package com.github.dei_tasks
 
 import com.google.android.gms.drive.{Drive, DriveId}
-import com.mindmup.android.tasks.TreeLike._
-import com.mindmup.android.tasks.MindmupJsonTree._
+import com.github.dei_tasks.TreeLike._
+import com.github.dei_tasks.MindmupJsonTree._
 import org.robolectric.{ShadowsAdapter, Shadows, RuntimeEnvironment, Robolectric}
 import org.robolectric.Shadows._
 import org.robolectric.annotation.Config
@@ -19,18 +19,18 @@ import scala.io.Source
 import util.{Try, Success, Failure}
 
 @Config(sdk = Array(21), manifest = "src/main/AndroidManifest.xml")
-class CommandsMindmupTasks extends FeatureSpec with Checkers with RobolectricSuite {
+class CommandsDeiTasks extends FeatureSpec with Checkers with RobolectricSuite {
   override val skipInstrumentationPkg = Seq("org.scalacheck")
   //ShadowLog.stream = System.out
 
-  feature("Mindmup Tasks") {
+  feature("DEI Tasks") {
     scenario("works") {
-      check((new MindmupTasksSpecification).property(), minSuccessful(3))
+      check((new DeiTasksSpecification).property(), minSuccessful(3))
 
     }
   }
 
-  class MindmupTasksSpecification extends Commands {
+  class DeiTasksSpecification extends Commands {
     implicit def dontShrinkAnything[T]: Shrink[T] = Shrink(s => Stream.empty)
     val mindmupJsonString = Source.fromURL(getClass.getResource("/mindmup_tasks.mup")).getLines.mkString("\n")
     val mindmupJsonStrings = Gen.const(mindmupJsonString)

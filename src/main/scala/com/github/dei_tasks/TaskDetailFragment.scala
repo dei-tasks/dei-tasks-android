@@ -1,4 +1,4 @@
-package com.mindmup.android.tasks
+package com.github.dei_tasks
 
 import android.app._
 import android.content.{Intent, IntentSender, Context, SharedPreferences}
@@ -13,7 +13,7 @@ import com.amulyakhare.textdrawable.TextDrawable
 import com.google.android.gms.drive.DriveId
 import com.malinskiy.materialicons.IconDrawable
 import com.malinskiy.materialicons.Iconify.IconValue
-import com.mindmup.android.tasks.Implicits._
+import com.github.dei_tasks.Implicits._
 import macroid._
 import macroid.contrib._
 import macroid.FullDsl._

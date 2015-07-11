@@ -1,11 +1,11 @@
-package com.mindmup.android.tasks
+package com.github.dei_tasks
 
 import android.support.v4.app.Fragment
 import android.graphics.Color
 import android.util.TypedValue
 import android.view.Menu
 import com.amulyakhare.textdrawable.TextDrawable
-import com.mindmup.android.tasks.TreeLike.{NotStarted, InProgress, Done}
+import com.github.dei_tasks.TreeLike.{NotStarted, InProgress, Done}
 
 trait TaskUi[T] { this: Fragment =>
   def treeLike: TreeLike[T]

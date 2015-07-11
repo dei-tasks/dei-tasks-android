@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Mindmup Tasks</string>
+    <string name="app_name">DEI Tasks</string>
     <string name="selected_mindmups">Choose Mindmups</string>
     <string name="selected_mindmups_summary">Tasks from these Mindmups will be
       displayed in the To Do lists</string>

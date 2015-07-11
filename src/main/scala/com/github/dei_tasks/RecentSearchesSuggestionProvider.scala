@@ -1,8 +1,8 @@
-package com.mindmup.android.tasks
+package com.github.dei_tasks
 
 import android.content.SearchRecentSuggestionsProvider
 object RecentSearchesSuggestionProvider {
-  val AUTHORITY = "com.mindmup.android.tasks.RecentSearchesSuggestionProvider"
+  val AUTHORITY = "com.github.dei_tasks.RecentSearchesSuggestionProvider"
   val MODE = SearchRecentSuggestionsProvider.DATABASE_MODE_QUERIES
 }
 

@@ -1,10 +1,10 @@
-package com.mindmup.android.tasks
+package com.github.dei_tasks
 
 import android.content.Context
 import android.view.View
 import android.view.inputmethod.{InputMethodManager, EditorInfo}
 import android.widget._
-import com.mindmup.android.tasks.Implicits._
+import com.github.dei_tasks.Implicits._
 import macroid._
 import macroid.contrib._
 import macroid.FullDsl._

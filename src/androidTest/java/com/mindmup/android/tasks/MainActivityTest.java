@@ -1,4 +1,4 @@
-package com.mindmup.android.tasks;
+package com.github.dei_tasks;
 
 import android.test.ActivityInstrumentationTestCase2;
 
@@ -9,13 +9,13 @@ import android.test.ActivityInstrumentationTestCase2;
  * <p/>
  * To run this test, you can type:
  * adb shell am instrument -w \
- * -e class com.mindmup.android.tasks.MainActivityTest \
- * com.mindmup.android.tasks.tests/android.test.InstrumentationTestRunner
+ * -e class com.github.dei_tasks.MainActivityTest \
+ * com.github.dei_tasks.tests/android.test.InstrumentationTestRunner
  */
 public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActivity> {
 
     public MainActivityTest() {
-        super("com.mindmup.android.tasks", MainActivity.class);
+        super("com.github.dei_tasks", MainActivity.class);
     }
 
 }

@@ -1,4 +1,4 @@
-package com.mindmup.android.tasks
+package com.github.dei_tasks
 
 import android.view.{ View, ViewGroup }
 import android.widget.Filter
