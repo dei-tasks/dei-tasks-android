@@ -77,3 +77,5 @@ proguardOptions in Android ++= Seq(
 )
 
 dexMaxHeap := "3072m"
+
+proguardCache in Android ++= Seq("com.google.android.gms")
