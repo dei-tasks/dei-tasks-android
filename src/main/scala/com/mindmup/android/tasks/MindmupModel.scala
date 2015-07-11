@@ -20,7 +20,7 @@ import com.google.android.gms.drive.query.Filters
 import com.google.android.gms.drive.query.Query
 import com.google.android.gms.drive.query.SearchableField
 import com.google.android.gms.drive.Metadata
-import com.google.android.gms.drive.events.ChangeEvent
+import com.google.android.gms.drive.events.{ChangeListener, ChangeEvent}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
@@ -51,16 +51,16 @@ class MindmupModel(googleApiClient: GoogleApiClient) {
     val driveId = DriveId.decodeFromString(encodedId)
     loadFile(driveId)
   }
-
+  val fileChangeListener: ChangeListener = { event: ChangeEvent =>
+    println(s"Got notified of change event $event for file ${event.getDriveId}")
+    //lastKnownChange() = System.currentTimeMillis
+  }
   def loadFile(driveId: DriveId): String = {
     googleApiClient.blockingConnect()
     val file = Drive.DriveApi.getFile(googleApiClient, driveId);
     val driveContentsResult =
       file.open(googleApiClient, DriveFile.MODE_READ_ONLY, null).await();
-    file.addChangeListener(googleApiClient, { event: ChangeEvent =>
-      println(s"Got notified of change event $event for file $file")
-      //lastKnownChange() = System.currentTimeMillis
-    })
+    file.addChangeListener(googleApiClient, fileChangeListener)
     println(s"Drive content results ${driveContentsResult} ${driveContentsResult.getStatus()}")
     if (!driveContentsResult.getStatus().isSuccess()) {
         return null;
