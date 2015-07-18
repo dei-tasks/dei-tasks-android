@@ -32,18 +32,20 @@ libraryDependencies ++= Seq(
   aar("org.macroid" %% "macroid-viewable" % "2.0.0-M4"),
   aar("com.fortysevendeg" %% "macroid-extras" % "0.2"),
   aar("com.github.bmelnychuk" % "atv" % "1.2.4"),
-  "com.malinskiy" % "materialicons" % "1.0.1",
-  "com.android.support" % "support-v4" % "22.1.1",
-  "com.android.support" % "appcompat-v7" % "22.1.1",
+  "com.malinskiy" % "materialicons" % "1.0.2",
+  "com.android.support" % "support-v4" % "22.2.1",
+  "com.android.support" % "appcompat-v7" % "22.2.1",
+  "com.android.support" % "design" % "22.2.1",
   "com.amulyakhare" % "com.amulyakhare.textdrawable" % "1.0.1",
   "net.sf.proguard" % "proguard-base" % "5.2.1",
-  "com.google.android.gms" % "play-services-drive" % "7.3.0",
+  "com.google.android.gms" % "play-services-drive" % "7.5.0",
   "com.propensive" %% "rapture-json-jawn" % "1.1.0",
   "com.lihaoyi" %% "scalarx" % "0.2.8",
   "com.softwaremill.scalamacrodebug" %% "macros" % "0.4",
-  "com.geteit" %% "robotest" % "0.10" % Test,
-  "org.robolectric" % "shadows-play-services" % "3.0-SNAPSHOT" % Test,
-  "org.robolectric" % "shadows-support-v4" % "3.0-SNAPSHOT" % Test,
+  "com.geteit" %% "robotest" % "0.10" % Test exclude("org.robolectric", "robolectric"),
+  "org.robolectric" % "robolectric" % "3.0" % Test,
+  "org.robolectric" % "shadows-play-services" % "3.0" % Test,
+  "org.robolectric" % "shadows-support-v4" % "3.0" % Test,
   "org.scalatest" %% "scalatest" % "2.2.5" % Test,
   "org.scalacheck" %% "scalacheck" % "1.12.4" % Test
 
@@ -78,4 +80,7 @@ proguardOptions in Android ++= Seq(
 
 dexMaxHeap := "3072m"
 
-proguardCache in Android ++= Seq("com.google.android.gms")
+proguardCache in Android ++= Seq(
+  "com.google.android.gms",
+  "android.support"
+)

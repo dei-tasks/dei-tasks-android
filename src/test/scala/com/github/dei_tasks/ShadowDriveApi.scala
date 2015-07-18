@@ -52,6 +52,7 @@ class ShadowDriveFile(driveId: DriveId, content: String) extends DriveFile {
   override def updateMetadata(googleApiClient: GoogleApiClient, metadataChangeSet: MetadataChangeSet): PendingResult[MetadataResult] = ???
   override def trash(googleApiClient: GoogleApiClient): PendingResult[Status] = ???
   override def addChangeSubscription(googleApiClient: GoogleApiClient): PendingResult[Status] = ???
+  override def delete(googleApiClient: GoogleApiClient): PendingResult[Status] = ???
 }
 
 class ShadowPendingResult[R <: com.google.android.gms.common.api.Result](r: R) extends PendingResult[R] {
@@ -65,15 +66,15 @@ class ShadowPendingResult[R <: com.google.android.gms.common.api.Result](r: R) e
 }
 
 class ShadowDriveContents(driveId: DriveId, content: String) extends DriveContents {
+  override def zzpe(): com.google.android.gms.drive.Contents = ???
+  override def zzpf(): Unit = ???
+  override def zzpg(): Boolean = ???
   override def reopenForWrite(googleApiClient: GoogleApiClient): PendingResult[DriveContentsResult] = ???
-  override def zznr(): Contents = ???
   override def getDriveId: DriveId = driveId
   override def getMode: Int = ???
   override def getParcelFileDescriptor: ParcelFileDescriptor = ???
   override def discard(googleApiClient: GoogleApiClient): Unit = ???
-  override def zznt(): Boolean = ???
   override def getOutputStream: OutputStream = ???
-  override def zzns(): Unit = ???
   override def commit(googleApiClient: GoogleApiClient, metadataChangeSet: MetadataChangeSet): PendingResult[Status] = ???
   override def commit(googleApiClient: GoogleApiClient, metadataChangeSet: MetadataChangeSet, executionOptions: ExecutionOptions): PendingResult[Status] = ???
   override def getInputStream: InputStream = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))
